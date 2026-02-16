@@ -12,12 +12,12 @@ class PlayersPage extends StatefulWidget {
 
 class _PlayersPageState extends State<PlayersPage> {
   Set<String> _selectedPlayerIds = {};
-  bool _isInitialized = false; // Flag to prevent re-initialization
+  int _numberOfTeams = 2; // Default number of teams
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Schedule the data fetch for after the first frame is built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dataService = Provider.of<DataService>(context, listen: false);
       dataService.fetchPlayers();
@@ -101,7 +101,8 @@ class _PlayersPageState extends State<PlayersPage> {
 
   Future<void> _submitRoster() async {
     final dataService = Provider.of<DataService>(context, listen: false);
-    final error = await dataService.submitRoster(_selectedPlayerIds.toList());
+    // Pass the number of teams when submitting
+    final error = await dataService.submitRoster(_selectedPlayerIds.toList(), _numberOfTeams);
 
     if (mounted) {
       if (error == null) {
@@ -122,16 +123,16 @@ class _PlayersPageState extends State<PlayersPage> {
       body: Consumer<DataService>(
         builder: (context, dataService, child) {
           
-          if (dataService.isLoadingPlayers || (dataService.isLoadingRoster && dataService.latestRoster == null)) {
+          if (dataService.isLoadingPlayers || (dataService.isLoadingRoster && !_isInitialized)) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Safely initialize the state after the build is complete.
           if (!_isInitialized && dataService.latestRoster != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 setState(() {
                   _selectedPlayerIds = dataService.latestRoster!.playerIds.toSet();
+                  _numberOfTeams = dataService.latestRoster!.numberOfTeams;
                   _isInitialized = true;
                 });
               }
@@ -140,28 +141,62 @@ class _PlayersPageState extends State<PlayersPage> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              // When refreshing, reset the flag and fetch new data.
               setState(() {
                 _isInitialized = false;
               });
               await dataService.fetchPlayers();
               await dataService.fetchLatestRoster();
             },
-            child: ListView.builder(
-              itemCount: dataService.players.length,
-              itemBuilder: (context, index) {
-                final player = dataService.players[index];
-                final isSelected = _selectedPlayerIds.contains(player.id);
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Number of Teams:', style: TextStyle(fontSize: 16)),
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: () {
+                          if (_numberOfTeams > 2) {
+                            setState(() {
+                              _numberOfTeams--;
+                            });
+                          }
+                        },
+                      ),
+                      Text('$_numberOfTeams', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () {
+                          // You can set a max limit if needed
+                          setState(() {
+                            _numberOfTeams++;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: dataService.players.length,
+                    itemBuilder: (context, index) {
+                      final player = dataService.players[index];
+                      final isSelected = _selectedPlayerIds.contains(player.id);
 
-                return CheckboxListTile(
-                  title: Text(player.name),
-                  value: isSelected,
-                  onChanged: (bool? value) {
-                    _onPlayerSelected(player.id, value);
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                );
-              },
+                      return CheckboxListTile(
+                        title: Text(player.name),
+                        value: isSelected,
+                        onChanged: (bool? value) {
+                          _onPlayerSelected(player.id, value);
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },

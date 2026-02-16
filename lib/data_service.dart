@@ -26,8 +26,9 @@ class WeeklyRoster {
   final String date;
   final List<String> playerNames;
   final List<String> playerIds;
+  final int numberOfTeams; // New field for the number of teams
 
-  WeeklyRoster({required this.id, required this.date, required this.playerNames, required this.playerIds});
+  WeeklyRoster({required this.id, required this.date, required this.playerNames, required this.playerIds, required this.numberOfTeams});
 }
 
 // --- Data Service ---
@@ -35,19 +36,15 @@ class WeeklyRoster {
 class DataService with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // --- State for New Roster Feature ---
   List<Player> _players = [];
   WeeklyRoster? _latestRoster;
   bool _isLoadingPlayers = false;
   bool _isLoadingRoster = false;
 
-  // --- Getters for New Roster Feature ---
   List<Player> get players => _players;
   WeeklyRoster? get latestRoster => _latestRoster;
   bool get isLoadingPlayers => _isLoadingPlayers;
   bool get isLoadingRoster => _isLoadingRoster;
-
-  // --- Methods for New Roster Feature (Firestore) ---
 
   Future<void> fetchPlayers() async {
     _isLoadingPlayers = true;
@@ -67,35 +64,35 @@ class DataService with ChangeNotifier {
     if (name.trim().isEmpty) return null;
     try {
       await _firestore.collection('players').add({'name': name.trim()});
-      fetchPlayers(); // Refresh the list
-      return null; // Success
+      fetchPlayers();
+      return null;
     } catch (e) {
       debugPrint('Error adding player: $e');
-      return e.toString(); // Return error message
+      return e.toString();
     }
   }
 
-  Future<String?> submitRoster(List<String> playerIds) async {
+  Future<String?> submitRoster(List<String> playerIds, int numberOfTeams) async {
     if (playerIds.isEmpty) return 'Please select at least one player.';
 
     try {
       final rosterData = {
         'date': Timestamp.now(),
         'present_players': playerIds,
+        'number_of_teams': numberOfTeams, // Save to Firestore
       };
 
-      // If a roster was loaded and has a valid ID, update it. Otherwise, create a new one.
       if (_latestRoster != null && _latestRoster!.id.isNotEmpty) {
         await _firestore.collection('weekly_rosters').doc(_latestRoster!.id).update(rosterData);
       } else {
         await _firestore.collection('weekly_rosters').add(rosterData);
       }
 
-      await fetchLatestRoster(); // Refresh the roster view with the updated data
-      return null; // Success
+      await fetchLatestRoster();
+      return null;
     } catch (e) {
       debugPrint('Error submitting roster: $e');
-      return e.toString(); // Return error message
+      return e.toString();
     }
   }
 
@@ -106,34 +103,35 @@ class DataService with ChangeNotifier {
       final rosterSnapshot = await _firestore.collection('weekly_rosters').orderBy('date', descending: true).limit(1).get();
 
       if (rosterSnapshot.docs.isEmpty) {
-        _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', playerNames: [], playerIds: []);
+        // Default to 2 teams if no roster exists
+        _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', playerNames: [], playerIds: [], numberOfTeams: 2);
       } else {
         final latestRosterDoc = rosterSnapshot.docs.first;
-        final Timestamp rosterTimestamp = latestRosterDoc['date'];
+        final docData = latestRosterDoc.data();
+        final Timestamp rosterTimestamp = docData['date'];
         final rosterDate = rosterTimestamp.toDate();
         final dateString = '${rosterDate.month}/${rosterDate.day}/${rosterDate.year}';
 
-        final List<String> playerIds = List<String>.from(latestRosterDoc['present_players']);
+        final List<String> playerIds = List<String>.from(docData['present_players']);
+        final int numberOfTeams = docData.containsKey('number_of_teams') ? docData['number_of_teams'] : 2;
         List<String> playerNames = [];
 
         if (playerIds.isNotEmpty) {
            final playersSnapshot = await _firestore.collection('players').where(FieldPath.documentId, whereIn: playerIds).get();
            final Map<String, String> playerMap = { for (var doc in playersSnapshot.docs) doc.id : doc.data()['name'] };
-           for (String playerId in playerIds) {
-              playerNames.add(playerMap[playerId] ?? 'Unknown Player');
-           }
+           playerNames = playerIds.map((id) => playerMap[id] ?? 'Unknown Player').toList();
         }
-        _latestRoster = WeeklyRoster(id: latestRosterDoc.id, date: dateString, playerNames: playerNames, playerIds: playerIds);
+
+        _latestRoster = WeeklyRoster(id: latestRosterDoc.id, date: dateString, playerNames: playerNames, playerIds: playerIds, numberOfTeams: numberOfTeams);
       }
     } catch (e) {
       debugPrint('Error fetching latest roster: $e');
-      _latestRoster = WeeklyRoster(id: '', date: 'Error fetching roster', playerNames: [], playerIds: []);
+      _latestRoster = WeeklyRoster(id: '', date: 'Error fetching roster', playerNames: [], playerIds: [], numberOfTeams: 2);
     } finally {
       _isLoadingRoster = false;
       notifyListeners();
     }
   }
-
 
   // --- Existing Methods for Ratings Feature (HTTP) ---
 

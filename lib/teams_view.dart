@@ -1,61 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'data_service.dart';
+import 'team_formation_view.dart'; // The drag-and-drop view
 
-class TeamsPage extends StatefulWidget {
+class TeamsPage extends StatelessWidget {
   const TeamsPage({super.key});
 
   @override
-  State<TeamsPage> createState() => _TeamsPageState();
+  Widget build(BuildContext context) {
+    // By using a Column with a TabBar and an Expanded TabBarView,
+    // we avoid a nested Scaffold, which was causing the layout overflow.
+    return DefaultTabController(
+      length: 2, // Two tabs: Create and Vote
+      child: Column(
+        children: [
+          const TabBar(
+            tabs: [
+              Tab(text: 'Create Teams', icon: Icon(Icons.group_add)),
+              Tab(text: 'Vote Teams', icon: Icon(Icons.how_to_vote)),
+            ],
+          ),
+          Expanded(
+            child: const TabBarView(
+              children: [
+                TeamFormationPage(),      // The drag-and-drop page
+                VoteTeamsPlaceholder(),   // The placeholder for voting
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _TeamsPageState extends State<TeamsPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DataService>(context, listen: false).fetchLatestRoster();
-    });
-  }
+// A placeholder widget for the future "Vote Teams" feature.
+class VoteTeamsPlaceholder extends StatelessWidget {
+  const VoteTeamsPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Consumer<DataService>(
-        builder: (context, dataService, child) {
-          final roster = dataService.latestRoster;
-
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Weekly Roster (${roster?.date ?? ''})'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => dataService.fetchLatestRoster(),
-                  tooltip: 'Refresh Roster',
-                ),
-              ],
-            ),
-            body: dataService.isLoadingRoster
-                ? const Center(child: CircularProgressIndicator())
-                : (roster == null || roster.playerNames.isEmpty)
-                    ? const Center(
-                        child: Text(
-                          'No players in the latest roster.\nAdmin needs to submit one.',
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: roster.playerNames.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(roster.playerNames[index]),
-                          );
-                        },
-                      ),
-          );
-        },
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(
+          'The UI for suggesting and voting on teams will be built here.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
