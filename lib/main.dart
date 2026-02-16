@@ -1,16 +1,19 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'providers/login_provider.dart';
 import 'example_main.dart';
 import 'view_rating.dart';
 import 'login_page.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'teams_view.dart';
 import 'firebase_options.dart';
-import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -42,82 +45,85 @@ class _MyAppState extends State<MyApp> {
           ),
           useMaterial3: true,
         ),
-        home: _LoginChecker(),
+        home: const _LoginChecker(),
         routes: {
-          '/example': (context) => NavigationScaffold(page: ExamplePage()),
-          '/ratings':
-              (context) =>
-                  NavigationScaffold(page: ViewRating(title: 'Player Ratings')),
-          '/login': (context) => NavigationScaffold(page: LoginPage()),
-          // Add more routes as needed'
+          '/example': (context) => const ExamplePage(),
+          '/ratings': (context) => const HomePage(),
+          '/login': (context) => const LoginPage(),
         },
       ),
     );
   }
 }
 
-class _LoginChecker extends StatefulWidget {
-  @override
-  _LoginCheckerState createState() => _LoginCheckerState();
-}
-
-class _LoginCheckerState extends State<_LoginChecker> {
-  @override
-  void initState() {
-    super.initState();
-  }
+class _LoginChecker extends StatelessWidget {
+  const _LoginChecker();
 
   @override
   Widget build(BuildContext context) {
-    print("_LoginCheckerState: build called");
     final loginProvider = Provider.of<LoginProvider>(context);
     final user = loginProvider.user;
-    print("_LoginCheckerState: user: ${user?.displayName ?? 'null'}");
 
     if (user != null) {
-      return NavigationScaffold(page: ViewRating(title: 'Player Ratings'));
+      return const HomePage();
     } else {
-      return NavigationScaffold(page: LoginPage());
+      return const LoginPage();
     }
   }
 }
 
-class NavigationScaffold extends StatelessWidget {
-  final Widget page;
-
-  const NavigationScaffold({super.key, required this.page});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bay Area Futsal'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/ratings');
-            },
-            child: const Text(
-              'View Ratings',
-              style: TextStyle(color: Colors.black),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Bay Area Futsal'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Ratings'),
+              Tab(text: 'Teams'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/example');
+              },
+              child: const Text('Example', style: TextStyle(color: Colors.black)),
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/example');
-            },
-            child: const Text('Example', style: TextStyle(color: Colors.black)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/login');
-            },
-            child: const Text('Login', style: TextStyle(color: Colors.black)),
-          ),
-        ],
+            TextButton(
+              onPressed: () {
+                final loginProvider = Provider.of<LoginProvider>(context, listen: false);
+                if (loginProvider.user != null) {
+                  loginProvider.logout();
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                } else {
+                  Navigator.pushNamed(context, '/login');
+                }
+              },
+              child: Consumer<LoginProvider>(
+                builder: (context, loginProvider, child) {
+                  return Text(
+                    loginProvider.user != null ? 'Logout' : 'Login',
+                    style: const TextStyle(color: Colors.black),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        body: const TabBarView(
+          children: [
+            ViewRating(title: 'Player Ratings'),
+            TeamsPage(),
+          ],
+        ),
       ),
-      body: page,
     );
   }
 }

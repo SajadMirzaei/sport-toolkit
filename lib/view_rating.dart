@@ -1,6 +1,6 @@
-// view_rating.dart
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/providers/login_provider.dart';
 import 'table_component.dart';
 import 'add_player_dialog.dart';
 import 'data_service.dart';
@@ -60,7 +60,7 @@ class ViewRatingState extends State<ViewRating> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add player')));
+      ).showSnackBar(const SnackBar(content: Text('Failed to add player')));
     }
   }
 
@@ -110,38 +110,30 @@ class ViewRatingState extends State<ViewRating> {
     return sortedList;
   }
 
-  bool _isAdmin() {
-    final User? user = FirebaseAuth.instance.currentUser;
-    return user != null && user.email == 'mirzaei.sajad@gmail.com';
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: Colors.brown),
-      body:
-          isLoading
-              ? Center(child: CircularProgressIndicator())
-              : Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TableComponent(
-                      data: sortedData,
-                      orderBy: orderBy,
-                      ascending: ascending,
-                      onSort: _handleSort,
-                    ),
-                  ],
-                ),
+    final loginProvider = Provider.of<LoginProvider>(context);
+    return isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Center(
+            child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TableComponent(
+                data: sortedData,
+                orderBy: orderBy,
+                ascending: ascending,
+                onSort: _handleSort,
               ),
-      floatingActionButton:
-          _isAdmin()
-              ? FloatingActionButton(
-                onPressed: _handleOpenDialog,
-                child: const Icon(Icons.add),
-              )
-              : null,
-    );
+              if (loginProvider.isAdmin)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: FloatingActionButton(
+                    onPressed: _handleOpenDialog,
+                    child: const Icon(Icons.add),
+                  ),
+                )
+            ],
+          ));
   }
 }

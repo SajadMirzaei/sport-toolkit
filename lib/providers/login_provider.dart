@@ -36,6 +36,10 @@ class LoginProvider with ChangeNotifier {
 
   User? get user => _user;
 
+  bool get isAdmin {
+    return _user != null && _user!.email == 'mirzaei.sajad@gmail.com';
+  }
+
   Future<void> googleLogin() async {
     debugPrint("LoginProvider - login google");
     _authService ??= GoogleAuthService();
