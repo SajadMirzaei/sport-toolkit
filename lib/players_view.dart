@@ -151,31 +151,56 @@ class _PlayersPageState extends State<PlayersPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Number of Teams:', style: TextStyle(fontSize: 16)),
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () {
-                          if (_numberOfTeams > 2) {
-                            setState(() {
-                              _numberOfTeams--;
-                            });
-                          }
-                        },
-                      ),
-                      Text('$_numberOfTeams', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          // You can set a max limit if needed
-                          setState(() {
-                            _numberOfTeams++;
-                          });
-                        },
-                      ),
-                    ],
+                  child: IntrinsicHeight(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Number of Teams:', style: TextStyle(fontSize: 16)),
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () {
+                                if (_numberOfTeams > 2) {
+                                  setState(() {
+                                    _numberOfTeams--;
+                                  });
+                                }
+                              },
+                            ),
+                            Text('$_numberOfTeams', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: () {
+                                setState(() {
+                                  _numberOfTeams++;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        const VerticalDivider(
+                          color: Colors.grey,
+                          thickness: 1,
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Selected Players:', style: TextStyle(fontSize: 16)),
+                            const SizedBox(width: 12),
+                            Chip(
+                              label: Text(
+                                '${_selectedPlayerIds.length}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                              backgroundColor: Theme.of(context).primaryColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
