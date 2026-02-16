@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/providers/login_provider.dart';
-import 'table_component.dart';
-import 'add_player_dialog.dart';
-import 'services/api_service.dart';
+import '../providers/login_provider.dart';
+import '../widgets/table_component.dart';
+import '../widgets/add_player_dialog.dart';
+import '../services/api_service.dart';
 
 class ViewRating extends StatefulWidget {
   const ViewRating({super.key, required this.title});

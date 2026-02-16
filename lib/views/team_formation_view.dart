@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'services/data_service.dart';
-import 'providers/login_provider.dart';
-import 'models/models.dart';
+import '../services/data_service.dart';
+import '../providers/login_provider.dart';
+import '../models/models.dart';
 
 class TeamFormationPage extends StatefulWidget {
   const TeamFormationPage({super.key});

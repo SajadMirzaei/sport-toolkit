@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/login_provider.dart';
+import '../providers/login_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

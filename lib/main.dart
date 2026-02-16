@@ -6,12 +6,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'providers/login_provider.dart';
 import 'services/data_service.dart';
 import 'example_main.dart';
-import 'view_rating.dart';
-import 'login_page.dart';
-import 'teams_view.dart';
-import 'players_view.dart';
+import 'views/view_rating.dart';
+import 'views/login_page.dart';
+import 'views/teams_view.dart';
+import 'views/players_view.dart';
 import 'firebase_options.dart';
-import 'new_feature.dart';
+import 'views/new_feature.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

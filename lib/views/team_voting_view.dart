@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/login_provider.dart';
-import 'services/data_service.dart';
-import 'models/models.dart';
+import '../services/data_service.dart';
+import '../models/models.dart';
 
 class TeamVotingView extends StatefulWidget {
   const TeamVotingView({super.key});
