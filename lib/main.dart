@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'providers/login_provider.dart';
+import 'data_service.dart';
 import 'example_main.dart';
 import 'view_rating.dart';
 import 'login_page.dart';
 import 'teams_view.dart';
+import 'players_view.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -24,19 +26,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final LoginProvider _loginProvider;
-
-  @override
-  void initState() {
-    super.initState();
-    _loginProvider = LoginProvider();
-    _loginProvider.getCurrentUser();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LoginProvider>.value(
-      value: _loginProvider,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginProvider()),
+        ChangeNotifierProvider(create: (_) => DataService()),
+      ],
       child: MaterialApp(
         title: 'Bay Area Futsal',
         theme: ThemeData(
@@ -61,14 +57,19 @@ class _LoginChecker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loginProvider = Provider.of<LoginProvider>(context);
-    final user = loginProvider.user;
+    // Initialize providers
+    final loginProvider = Provider.of<LoginProvider>(context, listen: false);
+    loginProvider.getCurrentUser();
 
-    if (user != null) {
-      return const HomePage();
-    } else {
-      return const LoginPage();
-    }
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) {
+        if (loginProvider.user != null) {
+          return const HomePage();
+        } else {
+          return const LoginPage();
+        }
+      },
+    );
   }
 }
 
@@ -77,53 +78,64 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Bay Area Futsal'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Ratings'),
-              Tab(text: 'Teams'),
+    return Consumer<LoginProvider>(builder: (context, loginProvider, child) {
+      final bool isAdmin = loginProvider.isAdmin;
+      final int tabLength = isAdmin ? 3 : 2;
+
+      final List<Widget> tabs = [
+        const Tab(text: 'Ratings'),
+        const Tab(text: 'Teams'),
+      ];
+      if (isAdmin) {
+        tabs.add(const Tab(text: 'Players'));
+      }
+
+      final List<Widget> tabViews = [
+        const ViewRating(title: 'Player Ratings'),
+        const TeamsPage(),
+      ];
+      if (isAdmin) {
+        tabViews.add(const PlayersPage());
+      }
+      return DefaultTabController(
+        length: tabLength,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Bay Area Futsal'),
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            bottom: TabBar(
+              tabs: tabs,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/example');
+                },
+                child:
+                    const Text('Example', style: TextStyle(color: Colors.black)),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (loginProvider.user != null) {
+                    loginProvider.logout();
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/login', (route) => false);
+                  } else {
+                    Navigator.pushNamed(context, '/login');
+                  }
+                },
+                child: Text(
+                  loginProvider.user != null ? 'Logout' : 'Login',
+                  style: const TextStyle(color: Colors.black),
+                ),
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/example');
-              },
-              child: const Text('Example', style: TextStyle(color: Colors.black)),
-            ),
-            TextButton(
-              onPressed: () {
-                final loginProvider = Provider.of<LoginProvider>(context, listen: false);
-                if (loginProvider.user != null) {
-                  loginProvider.logout();
-                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-                } else {
-                  Navigator.pushNamed(context, '/login');
-                }
-              },
-              child: Consumer<LoginProvider>(
-                builder: (context, loginProvider, child) {
-                  return Text(
-                    loginProvider.user != null ? 'Logout' : 'Login',
-                    style: const TextStyle(color: Colors.black),
-                  );
-                },
-              ),
-            ),
-          ],
+          body: TabBarView(
+            children: tabViews,
+          ),
         ),
-        body: const TabBarView(
-          children: [
-            ViewRating(title: 'Player Ratings'),
-            TeamsPage(),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 }
