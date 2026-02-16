@@ -67,10 +67,18 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
     final rosterId = dataService.latestRoster?.id;
     final username = loginProvider.user?.displayName ?? 'Anonymous';
+    final userId = loginProvider.user?.uid;
 
     if (rosterId == null || rosterId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not find a roster to link the suggestion to.')),
+      );
+      return;
+    }
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to submit a suggestion.')),
       );
       return;
     }
@@ -107,17 +115,40 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
     );
 
     if (confirmed == true) {
-      final error = await dataService.submitSuggestedTeam(_teams, rosterId, username);
+      final result = await dataService.submitSuggestedTeam(_teams, rosterId, username, userId);
 
       if (mounted) {
-        if (error == null) {
+        if (result == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Team suggestion submitted successfully!')),
+            const SnackBar(content: Text('Team suggestion submitted successfully! Your vote has been counted.')),
           );
-          _initializeTeamsAndPlayers();
+           _initializeTeamsAndPlayers(); // Reset the page
+           DefaultTabController.of(context)?.animateTo(1); // Switch to voting tab
+        } else if (result == 'DUPLICATE') {
+          await showDialog<void>(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: const Text('Suggestion Already Exists'),
+                content: const Text(
+                    'This team combination has already been suggested. Your submission has been counted as an upvote.'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+          if (mounted) {
+            DefaultTabController.of(context)?.animateTo(1);
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to submit suggestion: $error')),
+            SnackBar(content: Text('Failed to submit suggestion: $result')),
           );
         }
       }
