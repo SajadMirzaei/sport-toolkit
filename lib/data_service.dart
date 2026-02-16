@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -19,6 +18,22 @@ class Player {
       name: data['name'] ?? 'No Name',
     );
   }
+
+  // Convert a Player instance to a Map
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
+  }
+
+  // Create a Player instance from a Map
+  factory Player.fromJson(Map<String, dynamic> json) {
+    return Player(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
 }
 
 class WeeklyRoster {
@@ -26,9 +41,51 @@ class WeeklyRoster {
   final String date;
   final List<String> playerNames;
   final List<String> playerIds;
-  final int numberOfTeams; // New field for the number of teams
+  final int numberOfTeams;
 
-  WeeklyRoster({required this.id, required this.date, required this.playerNames, required this.playerIds, required this.numberOfTeams});
+  WeeklyRoster({
+    required this.id,
+    required this.date,
+    required this.playerNames,
+    required this.playerIds,
+    required this.numberOfTeams,
+  });
+}
+
+class SuggestedTeam {
+  final String id;
+  final List<List<Player>> teams; // Changed to hold Player objects
+  final String submittedBy;
+  final int upvotes;
+
+  SuggestedTeam({
+    required this.id,
+    required this.teams,
+    required this.submittedBy,
+    this.upvotes = 0,
+  });
+
+  factory SuggestedTeam.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
+    Map<String, dynamic> teamsMap = Map<String, dynamic>.from(data['teams'] ?? {});
+    List<List<Player>> teams = [];
+    
+    var sortedKeys = teamsMap.keys.toList()..sort();
+    
+    for (var key in sortedKeys) {
+      if (teamsMap[key] != null) {
+        var playerList = List<Map<String, dynamic>>.from(teamsMap[key]);
+        teams.add(playerList.map((playerMap) => Player.fromJson(playerMap)).toList());
+      }
+    }
+
+    return SuggestedTeam(
+      id: doc.id,
+      teams: teams,
+      submittedBy: data['submittedBy'] ?? 'Unknown',
+      upvotes: data['upvotes'] ?? 0,
+    );
+  }
 }
 
 // --- Data Service ---
@@ -38,13 +95,17 @@ class DataService with ChangeNotifier {
 
   List<Player> _players = [];
   WeeklyRoster? _latestRoster;
+  List<SuggestedTeam> _suggestedTeams = [];
   bool _isLoadingPlayers = false;
   bool _isLoadingRoster = false;
+  bool _isLoadingSuggestedTeams = false;
 
   List<Player> get players => _players;
   WeeklyRoster? get latestRoster => _latestRoster;
+  List<SuggestedTeam> get suggestedTeams => _suggestedTeams;
   bool get isLoadingPlayers => _isLoadingPlayers;
   bool get isLoadingRoster => _isLoadingRoster;
+  bool get isLoadingSuggestedTeams => _isLoadingSuggestedTeams;
 
   Future<void> fetchPlayers() async {
     _isLoadingPlayers = true;
@@ -79,7 +140,7 @@ class DataService with ChangeNotifier {
       final rosterData = {
         'date': Timestamp.now(),
         'present_players': playerIds,
-        'number_of_teams': numberOfTeams, // Save to Firestore
+        'number_of_teams': numberOfTeams,
       };
 
       if (_latestRoster != null && _latestRoster!.id.isNotEmpty) {
@@ -103,7 +164,6 @@ class DataService with ChangeNotifier {
       final rosterSnapshot = await _firestore.collection('weekly_rosters').orderBy('date', descending: true).limit(1).get();
 
       if (rosterSnapshot.docs.isEmpty) {
-        // Default to 2 teams if no roster exists
         _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', playerNames: [], playerIds: [], numberOfTeams: 2);
       } else {
         final latestRosterDoc = rosterSnapshot.docs.first;
@@ -123,6 +183,7 @@ class DataService with ChangeNotifier {
         }
 
         _latestRoster = WeeklyRoster(id: latestRosterDoc.id, date: dateString, playerNames: playerNames, playerIds: playerIds, numberOfTeams: numberOfTeams);
+        await fetchSuggestedTeams();
       }
     } catch (e) {
       debugPrint('Error fetching latest roster: $e');
@@ -133,27 +194,57 @@ class DataService with ChangeNotifier {
     }
   }
 
-  Future<String?> submitSuggestedTeam(List<List<String>> teams, String rosterId, String username) async {
+  Future<void> fetchSuggestedTeams() async {
+    if (latestRoster == null || latestRoster!.id.isEmpty) {
+      _suggestedTeams = [];
+      notifyListeners();
+      return;
+    }
+
+    _isLoadingSuggestedTeams = true;
+    notifyListeners();
+
     try {
-      // Convert the list of lists to a map of lists to avoid nested arrays
-      final Map<String, List<String>> teamsMap = {};
+      final rosterRef = _firestore.collection('weekly_rosters').doc(latestRoster!.id);
+      final snapshot = await _firestore
+          .collection('suggested_teams')
+          .where('rosterId', isEqualTo: rosterRef)
+          .get();
+
+      _suggestedTeams = snapshot.docs.map((doc) => SuggestedTeam.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('Error fetching suggested teams: $e');
+      _suggestedTeams = [];
+    } finally {
+      _isLoadingSuggestedTeams = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> submitSuggestedTeam(List<List<Player>> teams, String rosterId, String username) async {
+    if (rosterId.isEmpty) return 'Invalid roster ID.';
+    
+    try {
+      final Map<String, List<Map<String, dynamic>>> teamsMap = {};
       for (int i = 0; i < teams.length; i++) {
-        teamsMap['team_$i'] = teams[i];
+        teamsMap['team_$i'] = teams[i].map((player) => player.toJson()).toList();
       }
 
       await _firestore.collection('suggested_teams').add({
         'teams': teamsMap,
         'rosterId': _firestore.collection('weekly_rosters').doc(rosterId),
         'submittedBy': username,
+        'upvotes': 0,
       });
-      return null; // Success
+      
+      await fetchSuggestedTeams(); 
+      
+      return null;
     } catch (e) {
       debugPrint('Error submitting suggested team: $e');
-      return e.toString(); // Failure
+      return e.toString();
     }
   }
-
-  // --- Existing Methods for Ratings Feature (HTTP) ---
 
   Future<List<Map<String, dynamic>>> fetchData() async {
     try {

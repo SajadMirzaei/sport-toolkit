@@ -75,7 +75,6 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
       return;
     }
 
-    // Rule 1: All players must be assigned
     if (_unassignedPlayers.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All players must be assigned to a team before submitting.')),
@@ -83,7 +82,6 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
       return;
     }
 
-    // Rule 2: Teams must be balanced
     final teamSizes = _teams.map((team) => team.length).toList();
     if (teamSizes.isNotEmpty) {
       final min = teamSizes.reduce((a, b) => a < b ? a : b);
@@ -109,11 +107,7 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
     );
 
     if (confirmed == true) {
-      final teamsWithPlayerIds = _teams.map((team) {
-        return team.map((player) => player.id).toList();
-      }).toList();
-
-      final error = await dataService.submitSuggestedTeam(teamsWithPlayerIds, rosterId, username);
+      final error = await dataService.submitSuggestedTeam(_teams, rosterId, username);
 
       if (mounted) {
         if (error == null) {
