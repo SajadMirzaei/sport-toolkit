@@ -133,6 +133,26 @@ class DataService with ChangeNotifier {
     }
   }
 
+  Future<String?> submitSuggestedTeam(List<List<String>> teams, String rosterId, String username) async {
+    try {
+      // Convert the list of lists to a map of lists to avoid nested arrays
+      final Map<String, List<String>> teamsMap = {};
+      for (int i = 0; i < teams.length; i++) {
+        teamsMap['team_$i'] = teams[i];
+      }
+
+      await _firestore.collection('suggested_teams').add({
+        'teams': teamsMap,
+        'rosterId': _firestore.collection('weekly_rosters').doc(rosterId),
+        'submittedBy': username,
+      });
+      return null; // Success
+    } catch (e) {
+      debugPrint('Error submitting suggested team: $e');
+      return e.toString(); // Failure
+    }
+  }
+
   // --- Existing Methods for Ratings Feature (HTTP) ---
 
   Future<List<Map<String, dynamic>>> fetchData() async {

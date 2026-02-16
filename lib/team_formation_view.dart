@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'data_service.dart';
+import 'providers/login_provider.dart';
 
 class TeamFormationPage extends StatefulWidget {
   const TeamFormationPage({super.key});
@@ -61,14 +62,80 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
     });
   }
 
+  void _submitTeams() async {
+    final dataService = Provider.of<DataService>(context, listen: false);
+    final loginProvider = Provider.of<LoginProvider>(context, listen: false);
+    final rosterId = dataService.latestRoster?.id;
+    final username = loginProvider.user?.displayName ?? 'Anonymous';
+
+    if (rosterId == null || rosterId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not find a roster to link the suggestion to.')),
+      );
+      return;
+    }
+
+    // Rule 1: All players must be assigned
+    if (_unassignedPlayers.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All players must be assigned to a team before submitting.')),
+      );
+      return;
+    }
+
+    // Rule 2: Teams must be balanced
+    final teamSizes = _teams.map((team) => team.length).toList();
+    if (teamSizes.isNotEmpty) {
+      final min = teamSizes.reduce((a, b) => a < b ? a : b);
+      final max = teamSizes.reduce((a, b) => a > b ? a : b);
+      if (max - min > 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Teams are not balanced. Player counts per team cannot differ by more than one.')),
+        );
+        return;
+      }
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Submit Suggestion'),
+        content: const Text('Are you sure you want to submit these team suggestions?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Submit')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final teamsWithPlayerIds = _teams.map((team) {
+        return team.map((player) => player.id).toList();
+      }).toList();
+
+      final error = await dataService.submitSuggestedTeam(teamsWithPlayerIds, rosterId, username);
+
+      if (mounted) {
+        if (error == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Team suggestion submitted successfully!')),
+          );
+          _initializeTeamsAndPlayers();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to submit suggestion: $error')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Using a CustomScrollView makes the entire content area scrollable,
-    // preventing any overflow errors.
     return RefreshIndicator(
       onRefresh: () async {
         _initializeTeamsAndPlayers();
@@ -76,13 +143,7 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text('Unassigned Players', style: Theme.of(context).textTheme.titleLarge),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildPlayerList(_unassignedPlayers, 'unassigned'),
+            child: _buildUnassignedPlayersBox(),
           ),
           const SliverToBoxAdapter(
             child: Divider(height: 20, thickness: 2),
@@ -95,8 +156,56 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
               childCount: _teams.length,
             ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+              child: ElevatedButton(
+                onPressed: _submitTeams,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: Theme.of(context).textTheme.titleMedium,
+                ),
+                child: const Text('Submit Team Suggestion'),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUnassignedPlayersBox() {
+    return DragTarget<Player>(
+      onWillAccept: (player) => true,
+      onAccept: (player) {
+        setState(() {
+          for (var team in _teams) {
+            team.removeWhere((p) => p.id == player.id);
+          }
+          if (!_unassignedPlayers.any((p) => p.id == player.id)) {
+            _unassignedPlayers.add(player);
+          }
+        });
+      },
+      builder: (context, candidateData, rejectedData) {
+        return Container(
+          margin: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8.0),
+            color: candidateData.isNotEmpty ? Colors.lightBlue.withOpacity(0.3) : Colors.white,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Unassigned Players', style: Theme.of(context).textTheme.titleLarge),
+              const Divider(),
+              _buildPlayerList(_unassignedPlayers, 'unassigned'),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -105,9 +214,7 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
       onWillAccept: (player) => true,
       onAccept: (player) {
         setState(() {
-          // Ensure player is not in the unassigned list
           _unassignedPlayers.removeWhere((p) => p.id == player.id);
-          // Remove from any other team before adding to the new one
           for (var team in _teams) {
             team.removeWhere((p) => p.id == player.id);
           }

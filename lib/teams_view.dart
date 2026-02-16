@@ -15,12 +15,12 @@ class TeamsPage extends StatelessWidget {
         children: [
           const TabBar(
             tabs: [
-              Tab(text: 'Create Teams', icon: Icon(Icons.group_add)),
+              Tab(text: 'Suggest Teams', icon: Icon(Icons.group_add)),
               Tab(text: 'Vote Teams', icon: Icon(Icons.how_to_vote)),
             ],
           ),
-          Expanded(
-            child: const TabBarView(
+          const Expanded(
+            child: TabBarView(
               children: [
                 TeamFormationPage(),      // The drag-and-drop page
                 VoteTeamsPlaceholder(),   // The placeholder for voting
