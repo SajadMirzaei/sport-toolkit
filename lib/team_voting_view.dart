@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:myapp/providers/login_provider.dart';
 import 'data_service.dart';
 
 class TeamVotingView extends StatefulWidget {
@@ -21,6 +21,9 @@ class _TeamVotingViewState extends State<TeamVotingView> {
 
   @override
   Widget build(BuildContext context) {
+    final loginProvider = Provider.of<LoginProvider>(context, listen: false);
+    final userId = loginProvider.user?.uid;
+
     return Scaffold(
       body: Consumer<DataService>(
         builder: (context, dataService, child) {
@@ -43,6 +46,7 @@ class _TeamVotingViewState extends State<TeamVotingView> {
             itemBuilder: (context, index) {
               final suggestedTeam = dataService.suggestedTeams[index];
               final cardColor = index.isEven ? Colors.amber.shade50 : Colors.amber.shade100;
+              final userVote = userId != null ? suggestedTeam.votedBy[userId] : null;
 
               return Card(
                 color: cardColor,
@@ -69,14 +73,24 @@ class _TeamVotingViewState extends State<TeamVotingView> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.thumb_up_alt_outlined),
+                                icon: Icon(userVote == 'up' ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined),
                                 onPressed: () {
-                                  // TODO: Implement upvote functionality
+                                  if (userId != null) {
+                                    dataService.vote(suggestedTeam, userId, 'up');
+                                  }
                                 },
                               ),
                               Text(
-                                '${suggestedTeam.upvotes}',
+                                '${suggestedTeam.upvotes - suggestedTeam.downvotes}',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(
+                                icon: Icon(userVote == 'down' ? Icons.thumb_down_alt : Icons.thumb_down_alt_outlined),
+                                onPressed: () {
+                                  if (userId != null) {
+                                    dataService.vote(suggestedTeam, userId, 'down');
+                                  }
+                                },
                               ),
                             ],
                           ),

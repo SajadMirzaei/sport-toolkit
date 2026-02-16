@@ -19,7 +19,6 @@ class Player {
     );
   }
 
-  // Convert a Player instance to a Map
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -27,7 +26,6 @@ class Player {
     };
   }
 
-  // Create a Player instance from a Map
   factory Player.fromJson(Map<String, dynamic> json) {
     return Player(
       id: json['id'] as String,
@@ -54,15 +52,19 @@ class WeeklyRoster {
 
 class SuggestedTeam {
   final String id;
-  final List<List<Player>> teams; // Changed to hold Player objects
+  final List<List<Player>> teams;
   final String submittedBy;
   final int upvotes;
+  final int downvotes;
+  final Map<String, String> votedBy;
 
   SuggestedTeam({
     required this.id,
     required this.teams,
     required this.submittedBy,
     this.upvotes = 0,
+    this.downvotes = 0,
+    this.votedBy = const {},
   });
 
   factory SuggestedTeam.fromFirestore(DocumentSnapshot doc) {
@@ -84,6 +86,8 @@ class SuggestedTeam {
       teams: teams,
       submittedBy: data['submittedBy'] ?? 'Unknown',
       upvotes: data['upvotes'] ?? 0,
+      downvotes: data['downvotes'] ?? 0,
+      votedBy: Map<String, String>.from(data['votedBy'] ?? {}),
     );
   }
 }
@@ -212,6 +216,8 @@ class DataService with ChangeNotifier {
           .get();
 
       _suggestedTeams = snapshot.docs.map((doc) => SuggestedTeam.fromFirestore(doc)).toList();
+      _suggestedTeams.sort((a, b) => (b.upvotes - b.downvotes).compareTo(a.upvotes - a.downvotes));
+
     } catch (e) {
       debugPrint('Error fetching suggested teams: $e');
       _suggestedTeams = [];
@@ -219,6 +225,45 @@ class DataService with ChangeNotifier {
       _isLoadingSuggestedTeams = false;
       notifyListeners();
     }
+  }
+
+  Future<void> vote(SuggestedTeam suggestion, String userId, String voteType) async {
+    final suggestionRef = _firestore.collection('suggested_teams').doc(suggestion.id);
+
+    final currentVote = suggestion.votedBy[userId];
+    int newUpvotes = suggestion.upvotes;
+    int newDownvotes = suggestion.downvotes;
+    final Map<String, String> newVotedBy = Map.from(suggestion.votedBy);
+
+    if (currentVote == voteType) {
+        if (voteType == 'up') {
+            newUpvotes--;
+        } else {
+            newDownvotes--;
+        }
+        newVotedBy.remove(userId);
+    } else {
+        if (currentVote == 'up') {
+            newUpvotes--;
+        } else if (currentVote == 'down') {
+            newDownvotes--;
+        }
+
+        if (voteType == 'up') {
+            newUpvotes++;
+        } else {
+            newDownvotes++;
+        }
+        newVotedBy[userId] = voteType;
+    }
+
+    await suggestionRef.update({
+        'upvotes': newUpvotes,
+        'downvotes': newDownvotes,
+        'votedBy': newVotedBy,
+    });
+
+    await fetchSuggestedTeams();
   }
 
   Future<String?> submitSuggestedTeam(List<List<Player>> teams, String rosterId, String username) async {
@@ -235,6 +280,8 @@ class DataService with ChangeNotifier {
         'rosterId': _firestore.collection('weekly_rosters').doc(rosterId),
         'submittedBy': username,
         'upvotes': 0,
+        'downvotes': 0,
+        'votedBy': {},
       });
       
       await fetchSuggestedTeams(); 

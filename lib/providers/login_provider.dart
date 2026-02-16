@@ -17,15 +17,32 @@ class LoginProvider with ChangeNotifier {
     final user = _auth.currentUser;
     debugPrint("LoginProvider - Constructor: user: ${user?.email ?? 'null'}");
     if (user != null) {
-      setUser(user);
-      for (var userInfo in user.providerData) {
-        if (userInfo.providerId == 'google.com') {
-          _authService = _googleAuthService;
-          break;
-        } else if (userInfo.providerId == 'password') {
-          _authService = _emailPasswordAuthService;
-          break;
+      _initUser(user);
+    }
+  }
+  
+  Future<void> _initUser(User user) async {
+    User? userToSet = user;
+    if (user.displayName == null || user.displayName!.isEmpty) {
+      if (user.email != null) {
+        final displayName = user.email!.split('@').first;
+        try {
+          await user.updateDisplayName(displayName);
+          await user.reload();
+          userToSet = _auth.currentUser;
+        } catch (e) {
+          debugPrint("Failed to update display name: $e");
         }
+      }
+    }
+    setUser(userToSet);
+    for (var userInfo in userToSet!.providerData) {
+      if (userInfo.providerId == 'google.com') {
+        _authService = _googleAuthService;
+        break;
+      } else if (userInfo.providerId == 'password') {
+        _authService = _emailPasswordAuthService;
+        break;
       }
     }
   }
@@ -44,9 +61,10 @@ class LoginProvider with ChangeNotifier {
     debugPrint("LoginProvider - login google");
     _authService ??= GoogleAuthService();
     try {
-      final user =
-          await _authService!.signIn();
-      setUser(user);
+      final user = await _authService!.signIn();
+      if (user != null) {
+        await _initUser(user);
+      }
     } catch (e) {
       debugPrint("LoginProvider - login - Error: $e");
       rethrow;
@@ -58,7 +76,9 @@ class LoginProvider with ChangeNotifier {
     _authService ??= EmailPasswordAuthService();
     try {
       final user = await _authService!.signIn(email: email, password: password);
-      setUser(user); // we pass the parameters for email/password
+      if (user != null) {
+        await _initUser(user);
+      }
     } catch (e) {
       debugPrint("LoginProvider - login - Error: $e");
       rethrow;
@@ -72,7 +92,9 @@ class LoginProvider with ChangeNotifier {
     _authService ??= EmailPasswordAuthService();
     try {
       final user = await _authService!.signUp(email: email, password: password);
-      setUser(user);
+      if (user != null) {
+        await _initUser(user);
+      }
     } catch (e) {
       debugPrint("LoginProvider - login - Error: $e");
       rethrow;
@@ -85,7 +107,7 @@ class LoginProvider with ChangeNotifier {
     if (_authService != null) {
       return _authService!.getCurrentUser();
     }
-    return null;
+    return _auth.currentUser; // Fallback to FirebaseAuth.instance
   }
 
   Future<void> logout() async {
@@ -93,6 +115,8 @@ class LoginProvider with ChangeNotifier {
     debugPrint("LoginProvider - logout");
     if (_authService != null) {
       await _authService!.signOut();
+    } else {
+      await _auth.signOut(); // If authService is null for some reason
     }
     _authService = null;
     _user = null;
