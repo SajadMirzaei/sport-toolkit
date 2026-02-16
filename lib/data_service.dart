@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -21,10 +22,12 @@ class Player {
 }
 
 class WeeklyRoster {
+  final String id;
   final String date;
   final List<String> playerNames;
+  final List<String> playerIds;
 
-  WeeklyRoster({required this.date, required this.playerNames});
+  WeeklyRoster({required this.id, required this.date, required this.playerNames, required this.playerIds});
 }
 
 // --- Data Service ---
@@ -63,7 +66,6 @@ class DataService with ChangeNotifier {
   Future<String?> addPlayer(String name) async {
     if (name.trim().isEmpty) return null;
     try {
-      // Use .add() to let Firestore generate the document ID automatically
       await _firestore.collection('players').add({'name': name.trim()});
       fetchPlayers(); // Refresh the list
       return null; // Success
@@ -75,12 +77,21 @@ class DataService with ChangeNotifier {
 
   Future<String?> submitRoster(List<String> playerIds) async {
     if (playerIds.isEmpty) return 'Please select at least one player.';
+
     try {
-      await _firestore.collection('weekly_rosters').add({
+      final rosterData = {
         'date': Timestamp.now(),
         'present_players': playerIds,
-      });
-      fetchLatestRoster(); // Refresh the roster view
+      };
+
+      // If a roster was loaded and has a valid ID, update it. Otherwise, create a new one.
+      if (_latestRoster != null && _latestRoster!.id.isNotEmpty) {
+        await _firestore.collection('weekly_rosters').doc(_latestRoster!.id).update(rosterData);
+      } else {
+        await _firestore.collection('weekly_rosters').add(rosterData);
+      }
+
+      await fetchLatestRoster(); // Refresh the roster view with the updated data
       return null; // Success
     } catch (e) {
       debugPrint('Error submitting roster: $e');
@@ -95,7 +106,7 @@ class DataService with ChangeNotifier {
       final rosterSnapshot = await _firestore.collection('weekly_rosters').orderBy('date', descending: true).limit(1).get();
 
       if (rosterSnapshot.docs.isEmpty) {
-        _latestRoster = WeeklyRoster(date: 'No roster submitted yet', playerNames: []);
+        _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', playerNames: [], playerIds: []);
       } else {
         final latestRosterDoc = rosterSnapshot.docs.first;
         final Timestamp rosterTimestamp = latestRosterDoc['date'];
@@ -112,11 +123,11 @@ class DataService with ChangeNotifier {
               playerNames.add(playerMap[playerId] ?? 'Unknown Player');
            }
         }
-        _latestRoster = WeeklyRoster(date: dateString, playerNames: playerNames);
+        _latestRoster = WeeklyRoster(id: latestRosterDoc.id, date: dateString, playerNames: playerNames, playerIds: playerIds);
       }
     } catch (e) {
       debugPrint('Error fetching latest roster: $e');
-      _latestRoster = WeeklyRoster(date: 'Error fetching roster', playerNames: []);
+      _latestRoster = WeeklyRoster(id: '', date: 'Error fetching roster', playerNames: [], playerIds: []);
     } finally {
       _isLoadingRoster = false;
       notifyListeners();

@@ -11,13 +11,17 @@ class PlayersPage extends StatefulWidget {
 }
 
 class _PlayersPageState extends State<PlayersPage> {
-  final Set<String> _selectedPlayerIds = {};
+  Set<String> _selectedPlayerIds = {};
+  bool _isInitialized = false; // Flag to prevent re-initialization
 
   @override
   void initState() {
     super.initState();
+    // Schedule the data fetch for after the first frame is built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DataService>(context, listen: false).fetchPlayers();
+      final dataService = Provider.of<DataService>(context, listen: false);
+      dataService.fetchPlayers();
+      dataService.fetchLatestRoster();
     });
   }
 
@@ -33,13 +37,11 @@ class _PlayersPageState extends State<PlayersPage> {
 
   void _showAddPlayerDialog() {
     final nameController = TextEditingController();
-    // Capture the page's context, which has the ScaffoldMessenger.
     final pageContext = context;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        // Use a StatefulBuilder to manage the dialog's internal state (for the loading indicator).
         return StatefulBuilder(
           builder: (context, setState) {
             bool isLoading = false;
@@ -56,33 +58,31 @@ class _PlayersPageState extends State<PlayersPage> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  // Disable the button while loading to prevent multiple submissions.
-                  onPressed: isLoading ? null : () async {
-                    setState(() {
-                      isLoading = true;
-                    });
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() {
+                            isLoading = true;
+                          });
 
-                    final dataService = Provider.of<DataService>(pageContext, listen: false);
-                    final playerName = nameController.text;
-                    final error = await dataService.addPlayer(playerName);
+                          final dataService = Provider.of<DataService>(pageContext, listen: false);
+                          final playerName = nameController.text;
+                          final error = await dataService.addPlayer(playerName);
 
-                    // Ensure the widget is still mounted before interacting with the UI.
-                    if (!mounted) return;
+                          if (!mounted) return;
 
-                    // Pop the dialog using its own context.
-                    Navigator.of(dialogContext).pop();
+                          Navigator.of(dialogContext).pop();
 
-                    // Show the SnackBar using the page's context.
-                    if (error == null) {
-                      ScaffoldMessenger.of(pageContext).showSnackBar(
-                        SnackBar(content: Text('Player "$playerName" added.')),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(pageContext).showSnackBar(
-                        SnackBar(content: Text('Failed to add player: $error')),
-                      );
-                    }
-                  },
+                          if (error == null) {
+                            ScaffoldMessenger.of(pageContext).showSnackBar(
+                              SnackBar(content: Text('Player "$playerName" added.')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(pageContext).showSnackBar(
+                              SnackBar(content: Text('Failed to add player: $error')),
+                            );
+                          }
+                        },
                   child: isLoading
                       ? const SizedBox(
                           width: 20,
@@ -105,11 +105,8 @@ class _PlayersPageState extends State<PlayersPage> {
 
     if (mounted) {
       if (error == null) {
-        setState(() {
-          _selectedPlayerIds.clear();
-        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Weekly roster submitted successfully!')),
+          const SnackBar(content: Text('Weekly roster has been updated!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,11 +121,32 @@ class _PlayersPageState extends State<PlayersPage> {
     return Scaffold(
       body: Consumer<DataService>(
         builder: (context, dataService, child) {
-          if (dataService.isLoadingPlayers) {
+          
+          if (dataService.isLoadingPlayers || (dataService.isLoadingRoster && dataService.latestRoster == null)) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          // Safely initialize the state after the build is complete.
+          if (!_isInitialized && dataService.latestRoster != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _selectedPlayerIds = dataService.latestRoster!.playerIds.toSet();
+                  _isInitialized = true;
+                });
+              }
+            });
+          }
+
           return RefreshIndicator(
-            onRefresh: () => dataService.fetchPlayers(),
+            onRefresh: () async {
+              // When refreshing, reset the flag and fetch new data.
+              setState(() {
+                _isInitialized = false;
+              });
+              await dataService.fetchPlayers();
+              await dataService.fetchLatestRoster();
+            },
             child: ListView.builder(
               itemCount: dataService.players.length,
               itemBuilder: (context, index) {
@@ -141,6 +159,7 @@ class _PlayersPageState extends State<PlayersPage> {
                   onChanged: (bool? value) {
                     _onPlayerSelected(player.id, value);
                   },
+                  controlAffinity: ListTileControlAffinity.leading,
                 );
               },
             ),
