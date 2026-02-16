@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/providers/login_provider.dart';
 import 'table_component.dart';
 import 'add_player_dialog.dart';
-import 'data_service.dart';
+import 'services/api_service.dart';
 
 class ViewRating extends StatefulWidget {
   const ViewRating({super.key, required this.title});
@@ -19,7 +19,7 @@ class ViewRatingState extends State<ViewRating> {
   String orderBy = 'Player';
   bool ascending = true;
   bool isLoading = true;
-  final DataService _dataService = DataService();
+  final ApiService _apiService = ApiService();
   final GlobalKey<AddPlayerDialogState> _dialogKey = GlobalKey();
 
   @override
@@ -32,7 +32,7 @@ class ViewRatingState extends State<ViewRating> {
     setState(() {
       isLoading = true;
     });
-    data = await _dataService.fetchData();
+    data = await _apiService.fetchData();
     setState(() {
       isLoading = false;
     });
@@ -55,7 +55,7 @@ class ViewRatingState extends State<ViewRating> {
 
   Future<void> _handleAddPlayer(Map<String, dynamic> newPlayer) async {
     try {
-      await _dataService.handleAddPlayer(newPlayer);
+      await _apiService.handleAddPlayer(newPlayer);
       _fetchData();
     } catch (e) {
       ScaffoldMessenger.of(

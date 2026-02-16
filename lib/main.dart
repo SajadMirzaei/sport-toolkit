@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'providers/login_provider.dart';
-import 'data_service.dart';
+import 'services/data_service.dart';
 import 'example_main.dart';
 import 'view_rating.dart';
 import 'login_page.dart';
 import 'teams_view.dart';
 import 'players_view.dart';
 import 'firebase_options.dart';
+import 'new_feature.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,7 @@ class _MyAppState extends State<MyApp> {
           '/example': (context) => const ExamplePage(),
           '/ratings': (context) => const HomePage(),
           '/login': (context) => const LoginPage(),
+          '/new_feature': (context) => const NewFeature(),
         },
       ),
     );
@@ -80,7 +82,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LoginProvider>(builder: (context, loginProvider, child) {
       final bool isAdmin = loginProvider.isAdmin;
-      final int tabLength = isAdmin ? 3 : 2;
+      final int tabLength = isAdmin ? 4 : 2;
 
       final List<Widget> tabs = [
         const Tab(text: 'Ratings'),
@@ -88,6 +90,7 @@ class HomePage extends StatelessWidget {
       ];
       if (isAdmin) {
         tabs.add(const Tab(text: 'Players'));
+        tabs.add(const Tab(text: 'New Feature'));
       }
 
       final List<Widget> tabViews = [
@@ -96,6 +99,7 @@ class HomePage extends StatelessWidget {
       ];
       if (isAdmin) {
         tabViews.add(const PlayersPage());
+        tabViews.add(const NewFeature());
       }
       return DefaultTabController(
         length: tabLength,

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:myapp/auth_service.dart';
-import 'package:myapp/email_password_auth_service.dart';
-import 'package:myapp/google_auth_service.dart';
+import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/email_password_auth_service.dart';
+import 'package:myapp/services/google_auth_service.dart';
 
 class LoginProvider with ChangeNotifier {
   User? _user;

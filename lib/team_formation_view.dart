@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'data_service.dart';
+import 'services/data_service.dart';
 import 'providers/login_provider.dart';
 import 'models/models.dart';
 
