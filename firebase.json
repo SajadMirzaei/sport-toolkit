@@ -1,0 +1,34 @@
+{
+    "hosting": {
+        "source": ".",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "frameworksBackend": {
+            "region": "us-west1"
+        }
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "futsal-182fe",
+                    "appId": "1:862251787565:android:8fa82841126c5d4bc59fa4",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "futsal-182fe",
+                    "configurations": {
+                        "android": "1:862251787565:android:8fa82841126c5d4bc59fa4",
+                        "ios": "1:862251787565:ios:896000e889c3d078c59fa4",
+                        "web": "1:862251787565:web:2248bcabc8bc9ca8c59fa4"
+                    }
+                }
+            }
+        }
+    }
+}
