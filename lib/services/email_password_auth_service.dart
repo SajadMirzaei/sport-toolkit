@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
 
 class EmailPasswordAuthService implements AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth;
+
+  EmailPasswordAuthService([FirebaseAuth? auth]) : _auth = auth ?? FirebaseAuth.instance;
 
    @override
   Future<User> signIn({String? email, String? password}) async {

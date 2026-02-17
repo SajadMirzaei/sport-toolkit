@@ -6,11 +6,9 @@ import 'package:myapp/services/email_password_auth_service.dart';
 class LoginProvider with ChangeNotifier {
   User? _user;
   AuthService? _authService;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final EmailPasswordAuthService _emailPasswordAuthService =
-      EmailPasswordAuthService();
+  final FirebaseAuth _auth;
 
-  LoginProvider() {
+  LoginProvider(this._auth) {
     debugPrint("LoginProvider - Constructor");
     final user = _auth.currentUser;
     debugPrint("LoginProvider - Constructor: user: ${user?.email ?? 'null'}");
@@ -18,7 +16,7 @@ class LoginProvider with ChangeNotifier {
       _initUser(user);
     }
   }
-  
+
   Future<void> _initUser(User user) async {
     User? userToSet = user;
     if (user.displayName == null || user.displayName!.isEmpty) {
@@ -36,7 +34,7 @@ class LoginProvider with ChangeNotifier {
     setUser(userToSet);
     for (var userInfo in userToSet!.providerData) {
       if (userInfo.providerId == 'password') {
-        _authService = _emailPasswordAuthService;
+        _authService = EmailPasswordAuthService(_auth);
         break;
       }
     }
@@ -54,7 +52,7 @@ class LoginProvider with ChangeNotifier {
 
   Future<void> loginWithEmailAndPassword(String email, String password) async {
     debugPrint("LoginProvider - loginWithEmailAndPassword");
-    _authService ??= EmailPasswordAuthService();
+    _authService ??= EmailPasswordAuthService(_auth);
     try {
       final user = await _authService!.signIn(email: email, password: password);
       if (user != null) {
@@ -69,8 +67,7 @@ class LoginProvider with ChangeNotifier {
   Future<void> signUp(String email, String password) async {
     //signup with email and password
     debugPrint("LoginProvider - signup");
-    //initialize authService if it's null
-    _authService ??= EmailPasswordAuthService();
+    _authService ??= EmailPasswordAuthService(_auth);
     try {
       final user = await _authService!.signUp(email: email, password: password);
       if (user != null) {

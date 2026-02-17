@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'providers/login_provider.dart';
 import 'services/data_service.dart';
@@ -43,7 +44,7 @@ class _MyAppState extends State<MyApp> {
         if (snapshot.connectionState == ConnectionState.done) {
           return MultiProvider(
             providers: [
-              ChangeNotifierProvider(create: (_) => LoginProvider()),
+              ChangeNotifierProvider(create: (_) => LoginProvider(FirebaseAuth.instance)),
               ChangeNotifierProvider(create: (_) => DataService()),
             ],
             child: MaterialApp(
