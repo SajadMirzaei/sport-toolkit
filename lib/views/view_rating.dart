@@ -33,9 +33,11 @@ class ViewRatingState extends State<ViewRating> {
       isLoading = true;
     });
     data = await _apiService.fetchData();
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void _handleOpenDialog() {

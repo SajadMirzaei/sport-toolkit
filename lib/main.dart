@@ -15,7 +15,6 @@ import 'views/new_feature.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -27,29 +26,48 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Future<FirebaseApp> _initFirebase() async {
+    if (Firebase.apps.isEmpty) {
+      return await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    return Firebase.app();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => LoginProvider()),
-        ChangeNotifierProvider(create: (_) => DataService()),
-      ],
-      child: MaterialApp(
-        title: 'Bay Area Futsal',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 28, 121, 226),
-          ),
-          useMaterial3: true,
-        ),
-        home: const _LoginChecker(),
-        routes: {
-          '/example': (context) => const ExamplePage(),
-          '/ratings': (context) => const HomePage(),
-          '/login': (context) => const LoginPage(),
-          '/new_feature': (context) => const NewFeature(),
-        },
-      ),
+    return FutureBuilder(
+      future: _initFirebase(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(create: (_) => LoginProvider()),
+              ChangeNotifierProvider(create: (_) => DataService()),
+            ],
+            child: MaterialApp(
+              title: 'Bay Area Futsal',
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color.fromARGB(255, 28, 121, 226),
+                ),
+                useMaterial3: true,
+              ),
+              home: const _LoginChecker(),
+              routes: {
+                '/example': (context) => const ExamplePage(),
+                '/ratings': (context) => const HomePage(),
+                '/login': (context) => const LoginPage(),
+                '/new_feature': (context) => const NewFeature(),
+              },
+            ),
+          );
+        }
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
     );
   }
 }
