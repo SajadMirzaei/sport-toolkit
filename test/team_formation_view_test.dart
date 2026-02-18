@@ -194,5 +194,39 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
     });
 
+    testWidgets('shows success snackbar on successful submission', (WidgetTester tester) async {
+      when(mockDataService.submitSuggestedTeam(any, any, any, any)).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Team suggestion submitted successfully! Your vote has been counted.'), findsOneWidget);
+    });
+
+    testWidgets('shows duplicate suggestion dialog on duplicate submission', (WidgetTester tester) async {
+      when(mockDataService.submitSuggestedTeam(any, any, any, any)).thenAnswer((_) async => 'DUPLICATE');
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Suggestion Already Exists'), findsOneWidget);
+      expect(find.text('This team combination has already been suggested. Your submission has been counted as an upvote.'), findsOneWidget);
+    });
   });
 }
