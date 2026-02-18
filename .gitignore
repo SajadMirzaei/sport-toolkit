@@ -26,3 +26,8 @@ android/app/.cxx/
 android/.gradle/
 android/gradle/
 android/local.properties
+android/app/google-services.json
+android/key.properties
+
+# iOS
+ios/Runner/GoogleService-Info.plist
