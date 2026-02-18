@@ -39,7 +39,6 @@ void main() {
   });
 
   Widget createTeamFormationPage(WidgetTester tester) {
-    // Set a larger screen size to ensure all widgets are visible
     tester.binding.window.physicalSizeTestValue = const Size(1080, 2400);
     addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
 
@@ -67,6 +66,14 @@ void main() {
     );
   }
 
+  Future<void> dragPlayerToTeam(WidgetTester tester, String playerName, String teamName) async {
+    final playerChip = find.widgetWithText(Chip, playerName);
+    final teamTarget = findDragTargetByText(teamName);
+    final dragOffset = tester.getCenter(teamTarget) - tester.getCenter(playerChip);
+    await tester.drag(playerChip, dragOffset);
+    await tester.pumpAndSettle();
+  }
+
   group('TeamFormationPage', () {
     testWidgets('shows loading indicator when loading', (WidgetTester tester) async {
       when(mockDataService.isLoadingRoster).thenReturn(true);
@@ -92,13 +99,9 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      final player1Chip = find.widgetWithText(Chip, 'Player 1');
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+
       final team1Target = findDragTargetByText('Team 1');
-      final dragOffset = tester.getCenter(team1Target) - tester.getCenter(player1Chip);
-
-      await tester.drag(player1Chip, dragOffset);
-      await tester.pumpAndSettle();
-
       expect(find.descendant(of: team1Target, matching: find.text('Player 1')), findsOneWidget);
       final unassignedPlayersBox = findDragTargetByText('Unassigned Players');
       expect(find.descendant(of: unassignedPlayersBox, matching: find.text('Player 1')), findsNothing);
@@ -108,10 +111,8 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await tester.drag(find.widgetWithText(Chip, 'Player 1'), tester.getCenter(findDragTargetByText('Team 1')) - tester.getCenter(find.widgetWithText(Chip, 'Player 1')));
-      await tester.pumpAndSettle();
-      await tester.drag(find.widgetWithText(Chip, 'Player 2'), tester.getCenter(findDragTargetByText('Team 2')) - tester.getCenter(find.widgetWithText(Chip, 'Player 2')));
-      await tester.pumpAndSettle();
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
 
       await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
       await tester.pumpAndSettle();
@@ -129,14 +130,68 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await tester.drag(find.widgetWithText(Chip, 'Player 1'), tester.getCenter(findDragTargetByText('Team 1')) - tester.getCenter(find.widgetWithText(Chip, 'Player 1')));
-      await tester.pumpAndSettle();
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
 
       await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
       await tester.pumpAndSettle();
 
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('All players must be assigned to a team before submitting.'), findsOneWidget);
+    });
+
+    testWidgets('shows snackbar if team sizes differ by more than one', (WidgetTester tester) async {
+      when(mockDataService.players).thenReturn([
+        Player(id: 'p1', name: 'Player 1'),
+        Player(id: 'p2', name: 'Player 2'),
+        Player(id: 'p3', name: 'Player 3'),
+      ]);
+      when(mockDataService.latestRoster).thenReturn(WeeklyRoster(
+        id: '1',
+        date: '2023-10-27',
+        playerNames: ['Player 1', 'Player 2', 'Player 3'],
+        playerIds: ['p1', 'p2', 'p3'],
+        numberOfTeams: 2,
+      ));
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 2', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 3', 'Team 1');
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Teams are not balanced. Player counts per team cannot differ by more than one.'), findsOneWidget);
+    });
+
+    testWidgets('allows submission if team sizes differ by one', (WidgetTester tester) async {
+      when(mockDataService.players).thenReturn([
+        Player(id: 'p1', name: 'Player 1'),
+        Player(id: 'p2', name: 'Player 2'),
+        Player(id: 'p3', name: 'Player 3'),
+      ]);
+      when(mockDataService.latestRoster).thenReturn(WeeklyRoster(
+        id: '1',
+        date: '2023-10-27',
+        playerNames: ['Player 1', 'Player 2', 'Player 3'],
+        playerIds: ['p1', 'p2', 'p3'],
+        numberOfTeams: 2,
+      ));
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 2', 'Team 1');
+      await dragPlayerToTeam(tester, 'Player 3', 'Team 2');
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
     });
 
   });
