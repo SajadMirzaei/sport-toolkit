@@ -58,7 +58,7 @@ class DataService with ChangeNotifier {
   }
 
   Future<String?> addPlayer(String name) async {
-    if (name.trim().isEmpty) return null;
+    if (name.trim().isEmpty) return 'Player name cannot be empty.';
     try {
       await _firestore.collection('players').add({'name': name.trim()});
       fetchPlayers();
