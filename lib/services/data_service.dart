@@ -7,7 +7,12 @@ import '../models/models.dart';
 // --- Data Service ---
 
 class DataService with ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+
+  DataService() : _firestore = FirebaseFirestore.instance;
+
+  @visibleForTesting
+  DataService.test(this._firestore);
 
   List<Player> _players = [];
   WeeklyRoster? _latestRoster;
@@ -204,10 +209,12 @@ class DataService with ChangeNotifier {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        // Duplicate found, upvote it instead
+        // Duplicate found, upvote it instead if the user hasn't already.
         final existingSuggestion = SuggestedTeam.fromFirestore(querySnapshot.docs.first);
-        await vote(existingSuggestion, userId, 'up');
-        return 'DUPLICATE'; 
+        if (existingSuggestion.votedBy[userId] != 'up') {
+          await vote(existingSuggestion, userId, 'up');
+        }
+        return 'DUPLICATE';
       }
 
       // No duplicate, create a new suggestion

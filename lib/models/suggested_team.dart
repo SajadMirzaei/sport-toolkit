@@ -45,4 +45,19 @@ class SuggestedTeam {
       teamHash: data['teamHash'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, List<Map<String, dynamic>>> teamsMap = {};
+    for (int i = 0; i < teams.length; i++) {
+      teamsMap['team_$i'] = teams[i].map((player) => player.toJson()).toList();
+    }
+    return {
+      'teams': teamsMap,
+      'submittedBy': submittedBy,
+      'upvotes': upvotes,
+      'downvotes': downvotes,
+      'votedBy': votedBy,
+      'teamHash': teamHash,
+    };
+  }
 }
