@@ -161,7 +161,7 @@ class DataService with ChangeNotifier {
 
   Future<void> vote(SuggestedTeam suggestion, String userId, String voteType) async {
     final suggestionRef = _firestore.collection('suggested_teams').doc(suggestion.id);
-    
+
     await _firestore.runTransaction((transaction) async {
       final freshSnapshot = await transaction.get(suggestionRef);
       final freshSuggestion = SuggestedTeam.fromFirestore(freshSnapshot);
@@ -169,26 +169,34 @@ class DataService with ChangeNotifier {
       final currentVote = freshSuggestion.votedBy[userId];
       int newUpvotes = freshSuggestion.upvotes;
       int newDownvotes = freshSuggestion.downvotes;
-      final Map<String, String> newVotedBy = Map.from(freshSuggestion.votedBy);
+      final Map<String, dynamic> updateData = {};
 
       if (currentVote == voteType) { // User is retracting their vote
-        if (voteType == 'up') newUpvotes--;
-        else newDownvotes--;
-        newVotedBy.remove(userId);
+        if (voteType == 'up') {
+          newUpvotes--;
+        } else {
+          newDownvotes--;
+        }
+        updateData['votedBy.$userId'] = FieldValue.delete();
       } else { // User is changing vote or voting for the first time
-        if (currentVote == 'up') newUpvotes--;
-        else if (currentVote == 'down') newDownvotes--;
-        
-        if (voteType == 'up') newUpvotes++;
-        else newDownvotes++;
-        newVotedBy[userId] = voteType;
+        if (currentVote == 'up') {
+          newUpvotes--;
+        } else if (currentVote == 'down') {
+          newDownvotes--;
+        }
+
+        if (voteType == 'up') {
+          newUpvotes++;
+        } else {
+          newDownvotes++;
+        }
+        updateData['votedBy.$userId'] = voteType;
       }
 
-      transaction.update(suggestionRef, {
-        'upvotes': newUpvotes,
-        'downvotes': newDownvotes,
-        'votedBy': newVotedBy,
-      });
+      updateData['upvotes'] = newUpvotes;
+      updateData['downvotes'] = newDownvotes;
+
+      transaction.update(suggestionRef, updateData);
     });
 
     await fetchSuggestedTeams();
@@ -196,7 +204,7 @@ class DataService with ChangeNotifier {
 
   Future<String?> submitSuggestedTeam(List<List<Player>> teams, String rosterId, String username, String userId) async {
     if (rosterId.isEmpty) return 'Invalid roster ID.';
-    
+
     final teamHash = generateTeamHash(teams);
     final rosterRef = _firestore.collection('weekly_rosters').doc(rosterId);
 
@@ -232,9 +240,9 @@ class DataService with ChangeNotifier {
         'votedBy': {userId: 'up'}, // Record the submitter's upvote
         'teamHash': teamHash,
       });
-      
-      await fetchSuggestedTeams(); 
-      
+
+      await fetchSuggestedTeams();
+
       return null;
     } catch (e) {
       debugPrint('Error submitting suggested team: $e');
