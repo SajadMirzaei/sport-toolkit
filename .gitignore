@@ -31,6 +31,3 @@ android/key.properties
 
 # iOS
 ios/Runner/GoogleService-Info.plist
-
-# Coverage
-coverage/
