@@ -33,7 +33,7 @@ void main() {
   final suggestedTeam2 = SuggestedTeam(
     id: 'st2',
     teams: [[player2], [player1]],
-    submittedBy: 'User B',
+    submittedBy: 'User B', 
     upvotes: 2,
     downvotes: 3,
     votedBy: {},

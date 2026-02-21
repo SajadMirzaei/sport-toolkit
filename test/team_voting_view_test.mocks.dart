@@ -11,7 +11,6 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:myapp/models/models.dart' as _i4;
 import 'package:myapp/providers/login_provider.dart' as _i8;
-import 'package:myapp/services/auth_service.dart' as _i9;
 import 'package:myapp/services/data_service.dart' as _i3;
 
 // ignore_for_file: type=lint
@@ -113,6 +112,12 @@ class MockDataService extends _i1.Mock implements _i3.DataService {
   bool get hasListeners =>
       (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
           as bool);
+
+  @override
+  void setLatestRosterForTest(_i4.WeeklyRoster? roster) => super.noSuchMethod(
+    Invocation.method(#setLatestRosterForTest, [roster]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   String generateTeamHash(List<List<_i4.Player>>? teams) =>
@@ -244,12 +249,6 @@ class MockLoginProvider extends _i1.Mock implements _i8.LoginProvider {
   bool get hasListeners =>
       (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
           as bool);
-
-  @override
-  void setAuthService(_i9.AuthService? authService) => super.noSuchMethod(
-    Invocation.method(#setAuthService, [authService]),
-    returnValueForMissingStub: null,
-  );
 
   @override
   _i6.Future<void> loginWithEmailAndPassword(String? email, String? password) =>

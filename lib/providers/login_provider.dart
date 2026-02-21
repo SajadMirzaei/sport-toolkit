@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/email_password_auth_service.dart';
 
 class LoginProvider with ChangeNotifier {
   User? _user;
-  AuthService? _authService;
+  late final EmailPasswordAuthService _authService;
   final FirebaseAuth _auth;
 
   LoginProvider(this._auth) {
     debugPrint("LoginProvider - Constructor");
+    _authService = EmailPasswordAuthService(_auth);
     final user = _auth.currentUser;
     debugPrint("LoginProvider - Constructor: user: ${user?.email ?? 'null'}");
     if (user != null) {
@@ -32,16 +32,6 @@ class LoginProvider with ChangeNotifier {
       }
     }
     setUser(userToSet);
-    for (var userInfo in userToSet!.providerData) {
-      if (userInfo.providerId == 'password') {
-        _authService = EmailPasswordAuthService(_auth);
-        break;
-      }
-    }
-  }
-
-  void setAuthService(AuthService authService) {
-    _authService = authService;
   }
 
   User? get user => _user;
@@ -52,9 +42,8 @@ class LoginProvider with ChangeNotifier {
 
   Future<void> loginWithEmailAndPassword(String email, String password) async {
     debugPrint("LoginProvider - loginWithEmailAndPassword");
-    _authService ??= EmailPasswordAuthService(_auth);
     try {
-      final user = await _authService!.signIn(email: email, password: password);
+      final user = await _authService.signIn(email: email, password: password);
       if (user != null) {
         await _initUser(user);
       }
@@ -67,9 +56,8 @@ class LoginProvider with ChangeNotifier {
   Future<void> signUp(String email, String password) async {
     //signup with email and password
     debugPrint("LoginProvider - signup");
-    _authService ??= EmailPasswordAuthService(_auth);
     try {
-      final user = await _authService!.signUp(email: email, password: password);
+      final user = await _authService.signUp(email: email, password: password);
       if (user != null) {
         await _initUser(user);
       }
@@ -82,21 +70,13 @@ class LoginProvider with ChangeNotifier {
   User? getCurrentUser() {
     //get the current user logged in
     debugPrint("LoginProvider - getCurrentUser");
-    if (_authService != null) {
-      return _authService!.getCurrentUser();
-    }
-    return _auth.currentUser; // Fallback to FirebaseAuth.instance
+    return _authService.getCurrentUser();
   }
 
   Future<void> logout() async {
     //logout the user
     debugPrint("LoginProvider - logout");
-    if (_authService != null) {
-      await _authService!.signOut();
-    } else {
-      await _auth.signOut(); // If authService is null for some reason
-    }
-    _authService = null;
+    await _authService.signOut();
     _user = null;
     notifyListeners();
   }

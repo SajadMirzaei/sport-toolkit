@@ -3,15 +3,13 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
-import 'dart:ui' as _i7;
+import 'dart:async' as _i5;
+import 'dart:ui' as _i6;
 
-import 'package:firebase_auth/firebase_auth.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:myapp/models/models.dart' as _i4;
-import 'package:myapp/services/auth_service.dart' as _i8;
-import 'package:myapp/services/data_service.dart' as _i3;
+import 'package:mockito/src/dummies.dart' as _i4;
+import 'package:myapp/models/models.dart' as _i3;
+import 'package:myapp/services/data_service.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -28,34 +26,29 @@ import 'package:myapp/services/data_service.dart' as _i3;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeUser_0 extends _i1.SmartFake implements _i2.User {
-  _FakeUser_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
-}
-
 /// A class which mocks [DataService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockDataService extends _i1.Mock implements _i3.DataService {
+class MockDataService extends _i1.Mock implements _i2.DataService {
   MockDataService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  List<_i4.Player> get players =>
+  List<_i3.Player> get players =>
       (super.noSuchMethod(
             Invocation.getter(#players),
-            returnValue: <_i4.Player>[],
+            returnValue: <_i3.Player>[],
           )
-          as List<_i4.Player>);
+          as List<_i3.Player>);
 
   @override
-  List<_i4.SuggestedTeam> get suggestedTeams =>
+  List<_i3.SuggestedTeam> get suggestedTeams =>
       (super.noSuchMethod(
             Invocation.getter(#suggestedTeams),
-            returnValue: <_i4.SuggestedTeam>[],
+            returnValue: <_i3.SuggestedTeam>[],
           )
-          as List<_i4.SuggestedTeam>);
+          as List<_i3.SuggestedTeam>);
 
   @override
   bool get isLoadingPlayers =>
@@ -87,10 +80,16 @@ class MockDataService extends _i1.Mock implements _i3.DataService {
           as bool);
 
   @override
-  String generateTeamHash(List<List<_i4.Player>>? teams) =>
+  void setLatestRosterForTest(_i3.WeeklyRoster? roster) => super.noSuchMethod(
+    Invocation.method(#setLatestRosterForTest, [roster]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  String generateTeamHash(List<List<_i3.Player>>? teams) =>
       (super.noSuchMethod(
             Invocation.method(#generateTeamHash, [teams]),
-            returnValue: _i5.dummyValue<String>(
+            returnValue: _i4.dummyValue<String>(
               this,
               Invocation.method(#generateTeamHash, [teams]),
             ),
@@ -98,67 +97,67 @@ class MockDataService extends _i1.Mock implements _i3.DataService {
           as String);
 
   @override
-  _i6.Future<void> fetchPlayers() =>
+  _i5.Future<void> fetchPlayers() =>
       (super.noSuchMethod(
             Invocation.method(#fetchPlayers, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i6.Future<String?> addPlayer(String? name) =>
+  _i5.Future<String?> addPlayer(String? name) =>
       (super.noSuchMethod(
             Invocation.method(#addPlayer, [name]),
-            returnValue: _i6.Future<String?>.value(),
+            returnValue: _i5.Future<String?>.value(),
           )
-          as _i6.Future<String?>);
+          as _i5.Future<String?>);
 
   @override
-  _i6.Future<String?> submitRoster(
+  _i5.Future<String?> submitRoster(
     List<String>? playerIds,
     int? numberOfTeams,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#submitRoster, [playerIds, numberOfTeams]),
-            returnValue: _i6.Future<String?>.value(),
+            returnValue: _i5.Future<String?>.value(),
           )
-          as _i6.Future<String?>);
+          as _i5.Future<String?>);
 
   @override
-  _i6.Future<void> fetchLatestRoster() =>
+  _i5.Future<void> fetchLatestRoster() =>
       (super.noSuchMethod(
             Invocation.method(#fetchLatestRoster, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i6.Future<void> fetchSuggestedTeams() =>
+  _i5.Future<void> fetchSuggestedTeams() =>
       (super.noSuchMethod(
             Invocation.method(#fetchSuggestedTeams, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i6.Future<void> vote(
-    _i4.SuggestedTeam? suggestion,
+  _i5.Future<void> vote(
+    _i3.SuggestedTeam? suggestion,
     String? userId,
     String? voteType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#vote, [suggestion, userId, voteType]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i6.Future<String?> submitSuggestedTeam(
-    List<List<_i4.Player>>? teams,
+  _i5.Future<String?> submitSuggestedTeam(
+    List<List<_i3.Player>>? teams,
     String? rosterId,
     String? username,
     String? userId,
@@ -170,18 +169,18 @@ class MockDataService extends _i1.Mock implements _i3.DataService {
               username,
               userId,
             ]),
-            returnValue: _i6.Future<String?>.value(),
+            returnValue: _i5.Future<String?>.value(),
           )
-          as _i6.Future<String?>);
+          as _i5.Future<String?>);
 
   @override
-  void addListener(_i7.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i7.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -197,60 +196,4 @@ class MockDataService extends _i1.Mock implements _i3.DataService {
     Invocation.method(#notifyListeners, []),
     returnValueForMissingStub: null,
   );
-}
-
-/// A class which mocks [AuthService].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockAuthService extends _i1.Mock implements _i8.AuthService {
-  MockAuthService() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i6.Future<_i2.User> signIn({String? email, String? password}) =>
-      (super.noSuchMethod(
-            Invocation.method(#signIn, [], {
-              #email: email,
-              #password: password,
-            }),
-            returnValue: _i6.Future<_i2.User>.value(
-              _FakeUser_0(
-                this,
-                Invocation.method(#signIn, [], {
-                  #email: email,
-                  #password: password,
-                }),
-              ),
-            ),
-          )
-          as _i6.Future<_i2.User>);
-
-  @override
-  _i6.Future<_i2.User> signUp({String? email, String? password}) =>
-      (super.noSuchMethod(
-            Invocation.method(#signUp, [], {
-              #email: email,
-              #password: password,
-            }),
-            returnValue: _i6.Future<_i2.User>.value(
-              _FakeUser_0(
-                this,
-                Invocation.method(#signUp, [], {
-                  #email: email,
-                  #password: password,
-                }),
-              ),
-            ),
-          )
-          as _i6.Future<_i2.User>);
-
-  @override
-  _i6.Future<void> signOut() =>
-      (super.noSuchMethod(
-            Invocation.method(#signOut, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
 }

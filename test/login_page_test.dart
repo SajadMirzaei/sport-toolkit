@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:myapp/providers/login_provider.dart';
-import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/data_service.dart';
 import 'package:myapp/views/login_page.dart';
 import 'package:provider/provider.dart';

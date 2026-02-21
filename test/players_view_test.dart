@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:myapp/models/models.dart';
-import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/data_service.dart';
 import 'package:myapp/views/players_view.dart';
 import 'package:provider/provider.dart';
@@ -11,10 +10,9 @@ import 'package:provider/provider.dart';
 import 'players_view_test.mocks.dart';
 
 // Generate mocks for the services
-@GenerateMocks([DataService, AuthService])
+@GenerateMocks([DataService])
 void main() {
   late MockDataService mockDataService;
-  late MockAuthService mockAuthService;
 
   // Helper to create the widget tree with providers.
   Widget createPlayersPage() {
@@ -26,7 +24,6 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<DataService>.value(value: mockDataService),
-        Provider<AuthService>.value(value: mockAuthService),
       ],
       child: const MaterialApp(
         home: PlayersPage(), 
@@ -36,7 +33,6 @@ void main() {
 
   setUp(() {
     mockDataService = MockDataService();
-    mockAuthService = MockAuthService();
 
     // Default stubs for services
     when(mockDataService.players).thenReturn([]);

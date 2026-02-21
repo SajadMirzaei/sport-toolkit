@@ -80,6 +80,12 @@ class MockDataService extends _i1.Mock implements _i2.DataService {
           as bool);
 
   @override
+  void setLatestRosterForTest(_i3.WeeklyRoster? roster) => super.noSuchMethod(
+    Invocation.method(#setLatestRosterForTest, [roster]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   String generateTeamHash(List<List<_i3.Player>>? teams) =>
       (super.noSuchMethod(
             Invocation.method(#generateTeamHash, [teams]),

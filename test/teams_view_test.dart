@@ -4,7 +4,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/providers/login_provider.dart';
-import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/data_service.dart';
 import 'package:myapp/views/teams_view.dart';
 import 'package:provider/provider.dart';
@@ -13,10 +12,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'teams_view_test.mocks.dart';
 
 // Generate mocks for the services
-@GenerateMocks([DataService, AuthService, User, LoginProvider])
+@GenerateMocks([DataService, User, LoginProvider])
 void main() {
   late MockDataService mockDataService;
-  late MockAuthService mockAuthService;
   late MockUser mockUser;
   late MockLoginProvider mockLoginProvider;
 
@@ -25,7 +23,6 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<DataService>.value(value: mockDataService),
-        Provider<AuthService>.value(value: mockAuthService),
         ChangeNotifierProvider<LoginProvider>.value(value: mockLoginProvider),
       ],
       child: const MaterialApp(
@@ -36,7 +33,6 @@ void main() {
 
   setUp(() {
     mockDataService = MockDataService();
-    mockAuthService = MockAuthService();
     mockUser = MockUser();
     mockLoginProvider = MockLoginProvider();
 
@@ -50,12 +46,9 @@ void main() {
     when(mockDataService.suggestedTeams).thenReturn([]);
     when(mockDataService.isLoadingSuggestedTeams).thenReturn(false);
 
-    // Stubs for AuthService
-    when(mockAuthService.getCurrentUser()).thenReturn(mockUser);
-    when(mockUser.uid).thenReturn('uid-123');
-
     // Stubs for LoginProvider
     when(mockLoginProvider.user).thenReturn(mockUser);
+    when(mockUser.uid).thenReturn('uid-123');
   });
 
   group('TeamsPage', () {
