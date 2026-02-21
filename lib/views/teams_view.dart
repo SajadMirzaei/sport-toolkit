@@ -8,17 +8,33 @@ class TeamsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget _buildTab(String text, IconData icon) {
+      return Tab(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Text(text),
+          ],
+        ),
+      );
+    }
+
     // By using a Column with a TabBar and an Expanded TabBarView,
     // we avoid a nested Scaffold, which was causing the layout overflow.
     return DefaultTabController(
       length: 2, // Two tabs: Create and Vote
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Suggest Teams', icon: Icon(Icons.group_add)),
-              Tab(text: 'Vote Teams', icon: Icon(Icons.how_to_vote)),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TabBar(
+              tabs: [
+                _buildTab('Suggest Teams', Icons.group_add),
+                _buildTab('Vote Teams', Icons.how_to_vote),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
