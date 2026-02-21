@@ -415,6 +415,49 @@ void main() {
         expect(suggestion.votedBy['user_id'], 'up');
       });
     });
+
+    group('deletePlayer', () {
+      test('deletes a player successfully', () async {
+        final result = await dataService.deletePlayer('p1');
+        expect(result, isNull);
+        final doc = await fakeFirestore.collection('players').doc('p1').get();
+        expect(doc.exists, isFalse);
+        expect(dataService.players.any((p) => p.id == 'p1'), isFalse);
+      });
+
+      test('removes player from the latest roster if present', () async {
+        await fakeFirestore.collection('weekly_rosters').add({
+          'date': Timestamp.now(),
+          'present_players': ['p1', 'p2'],
+          'number_of_teams': 2,
+        });
+        await dataService.fetchLatestRoster();
+        expect(dataService.latestRoster!.playerIds, contains('p1'));
+
+        final result = await dataService.deletePlayer('p1');
+        expect(result, isNull);
+
+        final rosterDoc = await fakeFirestore
+            .collection('weekly_rosters')
+            .doc(dataService.latestRoster!.id)
+            .get();
+        final rosterData = rosterDoc.data();
+        expect(rosterData!['present_players'], isNot(contains('p1')));
+        expect(dataService.latestRoster!.playerIds, isNot(contains('p1')));
+      });
+
+      test('handles empty player ID', () async {
+        final result = await dataService.deletePlayer('');
+        expect(result, 'Player ID cannot be empty.');
+      });
+
+      test('handles Firestore errors gracefully', () async {
+        final erroringFirestore = ErroringFakeFirebaseFirestore();
+        dataService = DataService.test(erroringFirestore);
+        final result = await dataService.deletePlayer('p1');
+        expect(result, isNotNull);
+      });
+    });
   });
 
   group('DataService Coverage', () {
@@ -532,6 +575,48 @@ void main() {
                 .docs
                 .first;
         expect(suggestion.data()['upvotes'], 1);
+      },
+    );
+    test(
+      'submitSuggestedTeam upvotes a duplicate suggestion if the user hasn\'t upvoted it',
+      () async {
+        final roster = await fakeFirestore.collection('weekly_rosters').add({
+          'date': Timestamp.now(),
+          'present_players': ['p1', 'p2'],
+          'number_of_teams': 1,
+        });
+
+        final teams = [
+          [Player(id: 'p1', name: 'Player 1')],
+          [Player(id: 'p2', name: 'Player 2')],
+        ];
+
+        await dataService.fetchLatestRoster();
+
+        // User 1 submits a team
+        await dataService.submitSuggestedTeam(
+          teams,
+          roster.id,
+          'user1',
+          'uid1',
+        );
+
+        // User 2 submits the same team
+        final result = await dataService.submitSuggestedTeam(
+          teams,
+          roster.id,
+          'user2',
+          'uid2',
+        );
+
+        // Expect it to be a duplicate and upvoted
+        expect(result, 'DUPLICATE');
+        final suggestionDoc = (await fakeFirestore.collection('suggested_teams').get()).docs.first;
+        final suggestion = SuggestedTeam.fromFirestore(suggestionDoc);
+
+        expect(suggestion.upvotes, 2);
+        expect(suggestion.votedBy['uid1'], 'up');
+        expect(suggestion.votedBy['uid2'], 'up');
       },
     );
   });

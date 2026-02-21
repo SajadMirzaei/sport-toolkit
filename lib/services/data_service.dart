@@ -73,6 +73,32 @@ class DataService with ChangeNotifier {
     }
   }
 
+  Future<String?> deletePlayer(String playerId) async {
+    if (playerId.isEmpty) return 'Player ID cannot be empty.';
+    try {
+      final playerRef = _firestore.collection('players').doc(playerId);
+
+      await _firestore.runTransaction((transaction) async {
+        transaction.delete(playerRef);
+
+        if (_latestRoster != null && _latestRoster!.id.isNotEmpty) {
+          final rosterRef = _firestore.collection('weekly_rosters').doc(_latestRoster!.id);
+          transaction.update(rosterRef, {
+            'present_players': FieldValue.arrayRemove([playerId])
+          });
+        }
+      });
+
+      await fetchPlayers();
+      await fetchLatestRoster();
+
+      return null; // Success
+    } catch (e) {
+      debugPrint('Error deleting player: $e');
+      return e.toString(); // Failure
+    }
+  }
+
   Future<String?> submitRoster(List<String> playerIds, int numberOfTeams) async {
     if (playerIds.isEmpty) return 'Please select at least one player.';
 

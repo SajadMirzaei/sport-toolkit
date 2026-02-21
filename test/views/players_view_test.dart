@@ -49,6 +49,8 @@ void main() {
     when(mockDataService.fetchLatestRoster()).thenAnswer((_) async {});
     when(mockDataService.addPlayer(any)).thenAnswer((_) async => null);
     when(mockDataService.submitRoster(any, any)).thenAnswer((_) async => null);
+    // Add a default success response for deletePlayer
+    when(mockDataService.deletePlayer(any)).thenAnswer((_) async => null);
   });
 
   testWidgets('should show loading indicator while players are loading', (tester) async {
@@ -139,6 +141,34 @@ void main() {
     expect(find.text('Player "New Player" added.'), findsOneWidget);
   });
 
+  testWidgets('should delete a player and show success message', (tester) async {
+    await tester.pumpWidget(createPlayersPage(mockDataService));
+    await tester.pumpAndSettle();
+
+    // Find the delete icon for Player 1
+    final deleteIconFinder = find.descendant(
+      of: find.widgetWithText(CheckboxListTile, 'Player 1'),
+      matching: find.byIcon(Icons.delete_outline),
+    );
+    expect(deleteIconFinder, findsOneWidget);
+
+    // Tap the delete icon and wait for the dialog
+    await tester.tap(deleteIconFinder);
+    await tester.pumpAndSettle();
+
+    // Verify the dialog is shown
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Are you sure you want to delete Player 1?'), findsOneWidget);
+
+    // Tap the delete button in the dialog
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    // Verify that deletePlayer was called and the success snackbar is shown
+    verify(mockDataService.deletePlayer('1')).called(1);
+    expect(find.text('Player deleted successfully.'), findsOneWidget);
+  });
+
   testWidgets('should show error when adding a player fails', (tester) async {
     when(mockDataService.addPlayer(any)).thenAnswer((_) async => 'Error');
 
@@ -170,7 +200,6 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     verifyNever(mockDataService.addPlayer(any));
   });
-
 
   testWidgets('should submit roster and show success message', (tester) async {
     await tester.pumpWidget(createPlayersPage(mockDataService));
@@ -211,5 +240,58 @@ void main() {
 
     verify(mockDataService.fetchPlayers()).called(2); // Once in init, once on refresh
     verify(mockDataService.fetchLatestRoster()).called(2);
+  });
+
+  testWidgets('can cancel the delete player dialog', (tester) async {
+    await tester.pumpWidget(createPlayersPage(mockDataService));
+    await tester.pumpAndSettle();
+
+    // Find the delete icon for Player 1
+    final deleteIconFinder = find.descendant(
+      of: find.widgetWithText(CheckboxListTile, 'Player 1'),
+      matching: find.byIcon(Icons.delete_outline),
+    );
+    expect(deleteIconFinder, findsOneWidget);
+
+    // Tap the delete icon and wait for the dialog
+    await tester.tap(deleteIconFinder);
+    await tester.pumpAndSettle();
+
+    // Verify the dialog is shown
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    // Tap the cancel button in the dialog
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    // Verify the dialog is closed and delete was not called
+    expect(find.byType(AlertDialog), findsNothing);
+    verifyNever(mockDataService.deletePlayer(any));
+  });
+
+  testWidgets('should show error when deleting a player fails', (tester) async {
+    when(mockDataService.deletePlayer(any)).thenAnswer((_) async => 'Delete Error');
+
+    await tester.pumpWidget(createPlayersPage(mockDataService));
+    await tester.pumpAndSettle();
+
+    // Find the delete icon for Player 1
+    final deleteIconFinder = find.descendant(
+      of: find.widgetWithText(CheckboxListTile, 'Player 1'),
+      matching: find.byIcon(Icons.delete_outline),
+    );
+    expect(deleteIconFinder, findsOneWidget);
+
+    // Tap the delete icon and wait for the dialog
+    await tester.tap(deleteIconFinder);
+    await tester.pumpAndSettle();
+
+    // Tap the delete button in the dialog
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    // Verify that deletePlayer was called and the error snackbar is shown
+    verify(mockDataService.deletePlayer('1')).called(1);
+    expect(find.text('Failed to delete player: Delete Error'), findsOneWidget);
   });
 }

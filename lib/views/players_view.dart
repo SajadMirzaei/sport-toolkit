@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/player.dart';
 import '../services/data_service.dart';
 
 class PlayersPage extends StatefulWidget {
@@ -100,6 +101,48 @@ class _PlayersPageState extends State<PlayersPage> {
         );
       },
     );
+  }
+
+  void _showDeleteConfirmationDialog(Player player) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: Text('Are you sure you want to delete ${player.name}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop(); 
+                await _deletePlayer(player.id);
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deletePlayer(String playerId) async {
+    final dataService = Provider.of<DataService>(context, listen: false);
+    final error = await dataService.deletePlayer(playerId);
+
+    if (mounted) {
+      if (error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Player deleted successfully.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete player: $error')),
+        );
+      }
+    }
   }
 
   Future<void> _submitRoster() async {
@@ -217,6 +260,10 @@ class _PlayersPageState extends State<PlayersPage> {
                         onChanged: (bool? value) {
                           _onPlayerSelected(player.id, value);
                         },
+                        secondary: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                          onPressed: () => _showDeleteConfirmationDialog(player),
+                        ),
                         controlAffinity: ListTileControlAffinity.leading,
                       );
                     },

@@ -114,6 +114,14 @@ class MockDataService extends _i1.Mock implements _i2.DataService {
           as _i5.Future<String?>);
 
   @override
+  _i5.Future<String?> deletePlayer(String? playerId) =>
+      (super.noSuchMethod(
+            Invocation.method(#deletePlayer, [playerId]),
+            returnValue: _i5.Future<String?>.value(),
+          )
+          as _i5.Future<String?>);
+
+  @override
   _i5.Future<String?> submitRoster(
     List<String>? playerIds,
     int? numberOfTeams,
