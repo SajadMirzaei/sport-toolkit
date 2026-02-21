@@ -13,13 +13,14 @@ class TeamFormationPage extends StatefulWidget {
 }
 
 class _TeamFormationPageState extends State<TeamFormationPage>
-    with AutomaticKeepAliveClientMixin<TeamFormationPage> { // Added mixin
+    with AutomaticKeepAliveClientMixin<TeamFormationPage> {
   List<Player> _unassignedPlayers = [];
   late List<List<Player>> _teams;
   bool _isLoading = true;
+  DateTime? _rosterTimestampForCurrentSetup;
 
   @override
-  bool get wantKeepAlive => true; // Keep state alive
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -27,6 +28,11 @@ class _TeamFormationPageState extends State<TeamFormationPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeTeamsAndPlayers();
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void _initializeTeamsAndPlayers() {
@@ -56,6 +62,7 @@ class _TeamFormationPageState extends State<TeamFormationPage>
               _unassignedPlayers = List.from(rosterPlayers);
               _teams = List.generate(roster.numberOfTeams, (_) => []);
               _isLoading = false;
+              _rosterTimestampForCurrentSetup = roster.preciseDate; // Store the precise date
             });
           } else {
             setState(() {
@@ -63,8 +70,9 @@ class _TeamFormationPageState extends State<TeamFormationPage>
               _teams = List.generate(
                 2,
                 (_) => [],
-              ); // Default to 2 teams if no roster
+              ); // Default to 2 teams
               _isLoading = false;
+              _rosterTimestampForCurrentSetup = null;
             });
           }
         }
@@ -75,6 +83,36 @@ class _TeamFormationPageState extends State<TeamFormationPage>
   void _submitTeams() async {
     final dataService = Provider.of<DataService>(context, listen: false);
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
+    
+    await dataService.fetchLatestRoster(forceFromServer: true);
+    if (!mounted) return;
+
+    if (dataService.latestRoster?.preciseDate != _rosterTimestampForCurrentSetup) {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text('Roster Has Changed'),
+            content: const Text(
+                'The weekly roster has been updated. Your current team setup will be reset. Please create your teams again.'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      
+      if(mounted) {
+        _initializeTeamsAndPlayers();
+      }
+      return; 
+    }
+
     final rosterId = dataService.latestRoster?.id;
     final username = loginProvider.user?.displayName ?? 'Anonymous';
     final userId = loginProvider.user?.uid;

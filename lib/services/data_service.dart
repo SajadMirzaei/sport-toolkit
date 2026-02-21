@@ -123,37 +123,33 @@ class DataService with ChangeNotifier {
     }
   }
 
-  Future<void> fetchLatestRoster() async {
+  Future<void> fetchLatestRoster({bool forceFromServer = false}) async {
     _isLoadingRoster = true;
     notifyListeners();
     try {
-      final rosterSnapshot = await _firestore.collection('weekly_rosters').orderBy('date', descending: true).limit(1).get();
+      final options = forceFromServer ? const GetOptions(source: Source.server) : null;
+      final rosterSnapshot = await _firestore.collection('weekly_rosters').orderBy('date', descending: true).limit(1).get(options);
 
       if (rosterSnapshot.docs.isEmpty) {
-        _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', playerNames: [], playerIds: [], numberOfTeams: 2);
+        _latestRoster = WeeklyRoster(id: '', date: 'No roster submitted yet', preciseDate: DateTime.now(), playerNames: [], playerIds: [], numberOfTeams: 2);
       } else {
         final latestRosterDoc = rosterSnapshot.docs.first;
-        final docData = latestRosterDoc.data();
-        final Timestamp rosterTimestamp = docData['date'];
-        final rosterDate = rosterTimestamp.toDate();
-        final dateString = '${rosterDate.month}/${rosterDate.day}/${rosterDate.year}';
+        var roster = WeeklyRoster.fromFirestore(latestRosterDoc);
 
-        final List<String> playerIds = List<String>.from(docData['present_players']);
-        final int numberOfTeams = docData.containsKey('number_of_teams') ? docData['number_of_teams'] : 2;
-        List<String> playerNames = [];
-
-        if (playerIds.isNotEmpty) {
-           final playersSnapshot = await _firestore.collection('players').where(FieldPath.documentId, whereIn: playerIds).get();
+        if (roster.playerIds.isNotEmpty) {
+           final playersSnapshot = await _firestore.collection('players').where(FieldPath.documentId, whereIn: roster.playerIds).get(options);
            final Map<String, String> playerMap = { for (var doc in playersSnapshot.docs) doc.id : doc.data()['name'] };
-           playerNames = playerIds.map((id) => playerMap[id] ?? 'Unknown Player').toList();
+           final playerNames = roster.playerIds.map((id) => playerMap[id] ?? 'Unknown Player').toList();
+           _latestRoster = roster.copyWith(playerNames: playerNames);
+        } else {
+          _latestRoster = roster;
         }
 
-        _latestRoster = WeeklyRoster(id: latestRosterDoc.id, date: dateString, playerNames: playerNames, playerIds: playerIds, numberOfTeams: numberOfTeams);
         await fetchSuggestedTeams();
       }
     } catch (e) {
       debugPrint('Error fetching latest roster: $e');
-      _latestRoster = WeeklyRoster(id: '', date: 'Error fetching roster', playerNames: [], playerIds: [], numberOfTeams: 2);
+      _latestRoster = WeeklyRoster(id: '', date: 'Error fetching roster', preciseDate: DateTime.now(), playerNames: [], playerIds: [], numberOfTeams: 2);
     } finally {
       _isLoadingRoster = false;
       notifyListeners();

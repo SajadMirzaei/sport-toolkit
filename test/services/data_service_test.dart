@@ -504,6 +504,7 @@ void main() {
         WeeklyRoster(
           id: 'roster1',
           date: '',
+          preciseDate: DateTime.now(),
           playerNames: [],
           playerIds: [],
           numberOfTeams: 2,

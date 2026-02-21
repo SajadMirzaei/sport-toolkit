@@ -26,6 +26,7 @@ void main() {
   final mockRoster = WeeklyRoster(
     id: 'roster1',
     date: '01/01/2024',
+    preciseDate: DateTime(2024, 1, 1),
     playerIds: const ['p1', 'p2'],
     playerNames: const ['Player 1', 'Player 2'],
     numberOfTeams: 2,
@@ -67,7 +68,7 @@ void main() {
     testWidgets('renders TabBar and initial TeamFormationPage', (WidgetTester tester) async {
       // Use an empty roster for this test to keep it simple
       when(mockDataService.latestRoster).thenReturn(
-        WeeklyRoster(id: 'roster1', date: '01/01/2024', playerIds: [], playerNames: [], numberOfTeams: 2)
+        WeeklyRoster(id: 'roster1', date: '01/01/2024', preciseDate: DateTime(2024, 1, 1), playerIds: [], playerNames: [], numberOfTeams: 2)
       );
       when(mockDataService.players).thenReturn([]);
 

@@ -133,9 +133,11 @@ class MockDataService extends _i1.Mock implements _i2.DataService {
           as _i5.Future<String?>);
 
   @override
-  _i5.Future<void> fetchLatestRoster() =>
+  _i5.Future<void> fetchLatestRoster({bool? forceFromServer = false}) =>
       (super.noSuchMethod(
-            Invocation.method(#fetchLatestRoster, []),
+            Invocation.method(#fetchLatestRoster, [], {
+              #forceFromServer: forceFromServer,
+            }),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )

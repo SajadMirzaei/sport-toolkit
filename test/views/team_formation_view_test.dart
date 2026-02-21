@@ -24,7 +24,7 @@ void main() {
     mockUser = MockUser();
 
     when(mockDataService.fetchPlayers()).thenAnswer((_) async {});
-    when(mockDataService.fetchLatestRoster()).thenAnswer((_) async {});
+    when(mockDataService.fetchLatestRoster(forceFromServer: anyNamed('forceFromServer'))).thenAnswer((_) async {});
     when(
       mockDataService.submitSuggestedTeam(any, any, any, any),
     ).thenAnswer((_) async => null);
@@ -38,6 +38,7 @@ void main() {
       WeeklyRoster(
         id: '1',
         date: '2023-10-27',
+        preciseDate: DateTime(2023, 10, 27, 10, 0, 0),
         playerNames: ['Player 1', 'Player 2'],
         playerIds: ['p1', 'p2'],
         numberOfTeams: 2,
@@ -291,6 +292,7 @@ void main() {
         WeeklyRoster(
           id: '1',
           date: '2023-10-27',
+          preciseDate: DateTime(2023, 10, 27, 10, 0, 0),
           playerNames: ['Player 1', 'Player 2', 'Player 3'],
           playerIds: ['p1', 'p2', 'p3'],
           numberOfTeams: 2,
@@ -331,6 +333,7 @@ void main() {
         WeeklyRoster(
           id: '1',
           date: '2023-10-27',
+          preciseDate: DateTime(2023, 10, 27, 10, 0, 0),
           playerNames: ['Player 1', 'Player 2', 'Player 3'],
           playerIds: ['p1', 'p2', 'p3'],
           numberOfTeams: 2,
@@ -419,7 +422,14 @@ void main() {
     });
 
     testWidgets('handles null roster', (WidgetTester tester) async {
-      when(mockDataService.latestRoster).thenReturn(null);
+      when(mockDataService.latestRoster).thenReturn(WeeklyRoster(
+        id: '',
+        date: 'No roster submitted yet',
+        preciseDate: DateTime.now(),
+        playerNames: [],
+        playerIds: [],
+        numberOfTeams: 2
+      ));
 
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
@@ -459,6 +469,7 @@ void main() {
         WeeklyRoster(
           id: '',
           date: '2023-10-27',
+          preciseDate: DateTime(2023, 10, 27, 10, 0, 0),
           playerNames: ['Player 1', 'Player 2'],
           playerIds: ['p1', 'p2'],
           numberOfTeams: 2,
@@ -532,5 +543,63 @@ void main() {
       expect(find.text('Failed to submit suggestion: UNKNOWN_ERROR'),
           findsOneWidget);
     });
+
+    testWidgets('shows stale roster dialog and aborts submission if roster changes', (WidgetTester tester) async {
+      // 1. SETUP
+      final initialRoster = WeeklyRoster(
+        id: 'roster1',
+        date: '2023-10-27',
+        preciseDate: DateTime(2023, 10, 27, 10, 0, 0),
+        playerNames: ['Player 1', 'Player 2'],
+        playerIds: ['p1', 'p2'],
+        numberOfTeams: 2,
+      );
+      final updatedRoster = WeeklyRoster(
+        id: 'roster2',
+        date: '2023-10-27', // Same date, different time
+        preciseDate: DateTime(2023, 10, 27, 11, 0, 0),
+        playerNames: ['Player 1', 'Player 2', 'Player 3'],
+        playerIds: ['p1', 'p2', 'p3'],
+        numberOfTeams: 2,
+      );
+
+      // Initial load uses the first roster
+      when(mockDataService.latestRoster).thenReturn(initialRoster);
+      
+      // When the submission happens, the forced fetch will "load" the new roster
+      when(mockDataService.fetchLatestRoster(forceFromServer: true)).thenAnswer((_) async {
+        // After this call, the service should report the new roster
+        when(mockDataService.latestRoster).thenReturn(updatedRoster);
+      });
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      // 2. ARRANGE - Make the team setup valid for submission
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      // 3. ACT - Tap submit
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'));
+      await tester.pumpAndSettle();
+
+      // 4. ASSERT
+      // The stale roster dialog should appear
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Roster Has Changed'), findsOneWidget);
+
+      // Submission should not have happened
+      verifyNever(mockDataService.submitSuggestedTeam(any, any, any, any));
+      
+      // Dismiss the dialog
+      await tester.tap(find.widgetWithText(TextButton, 'OK'));
+      await tester.pumpAndSettle();
+      
+      // The page should have re-initialized
+      verify(mockDataService.fetchLatestRoster(forceFromServer: false)).called(2);
+    });
+
   });
 }

@@ -36,6 +36,7 @@ void main() {
     playerNames: ['Player 1'],
     numberOfTeams: 3,
     date: '2024-01-01',
+    preciseDate: DateTime(2024, 1, 1),
   );
 
   setUp(() {
