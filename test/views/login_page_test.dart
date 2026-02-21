@@ -3,6 +3,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
+import 'package:myapp/constants.dart';
 import 'package:myapp/providers/login_provider.dart';
 import 'package:myapp/services/data_service.dart';
 import 'package:myapp/views/login_page.dart';
@@ -65,6 +66,21 @@ void main() {
     loginProvider = LoginProvider(mockAuth);
   });
 
+  testWidgets('LoginPage should display title and subtitle', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<LoginProvider>.value(value: loginProvider),
+          ChangeNotifierProvider<DataService>.value(value: mockDataService),
+        ],
+        child: const MaterialApp(home: LoginPage()),
+      ),
+    );
+
+    expect(find.text(kLoginPageTitle), findsOneWidget);
+    expect(find.text(kLoginPageSubtitle), findsOneWidget);
+  });
+
   testWidgets(
     'LoginPage should display email and password fields, and sign in/sign up buttons',
     (WidgetTester tester) async {
@@ -80,8 +96,8 @@ void main() {
 
       expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Sign In'), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Sign Up'), findsOneWidget);
+      expect(find.text('Sign In'), findsOneWidget);
+      expect(find.text('Sign Up'), findsOneWidget);
     },
   );
 
@@ -106,7 +122,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Password'),
         'password123',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
+      await tester.tap(find.text('Sign Up'));
       await tester.pumpAndSettle();
 
       expect(mockAuth.currentUser, isNotNull);
@@ -142,7 +158,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Password'),
       'password123',
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
 
     expect(mockAuth.currentUser, isNotNull);
@@ -170,7 +186,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Password'),
       'password123',
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.tap(find.text('Sign In'));
     await tester.pump();
 
     expect(find.text('Please enter a valid email'), findsOneWidget);
@@ -189,7 +205,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.tap(find.text('Sign In'));
     await tester.pump();
 
     expect(find.text('Please enter your email'), findsOneWidget);
@@ -217,7 +233,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Password'),
       '12345',
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
+    await tester.tap(find.text('Sign Up'));
     await tester.pump();
 
     expect(find.text('Password must be at least 6 characters'), findsOneWidget);
@@ -261,7 +277,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Password'),
       'wrong-password',
     );
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.tap(find.text('Sign In'));
 
     // Pump a single frame to allow the SnackBar to appear.
     await tester.pump();
@@ -304,7 +320,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Password'),
         'new-password',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
+      await tester.tap(find.text('Sign Up'));
 
       // Pump a single frame to allow the SnackBar to appear.
       await tester.pump();
