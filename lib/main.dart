@@ -73,8 +73,6 @@ class _MyAppState extends State<MyApp> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
                   ),
                 ),
                  dialogTheme: DialogThemeData(

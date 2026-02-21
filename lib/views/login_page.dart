@@ -104,12 +104,6 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _handleEmailPasswordLogin,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
               child: const Text('Sign In'),
             ),
           ),
