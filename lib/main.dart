@@ -37,7 +37,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color.fromARGB(255, 28, 121, 226),
+      seedColor: const Color(0xFF007A7A),
     );
 
     return FutureBuilder(
