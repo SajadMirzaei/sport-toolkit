@@ -12,7 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'team_formation_view_test.mocks.dart';
 
-@GenerateMocks([DataService, LoginProvider, User])
+@GenerateMocks([DataService, LoginProvider, User, TabController])
 void main() {
   late MockDataService mockDataService;
   late MockLoginProvider mockLoginProvider;
@@ -354,13 +354,9 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
     });
 
-    testWidgets('shows success snackbar on successful submission', (
+    testWidgets('shows success snackbar and switches tab on successful submission', (
       WidgetTester tester,
     ) async {
-      when(
-        mockDataService.submitSuggestedTeam(any, any, any, any),
-      ).thenAnswer((_) async => null);
-
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
@@ -382,11 +378,16 @@ void main() {
         ),
         findsOneWidget,
       );
+
+      final tabController = DefaultTabController.of(
+        tester.element(find.byType(TeamFormationPage)),
+      );
+      expect(tabController.index, 1);
     });
 
-    testWidgets('shows duplicate suggestion dialog on duplicate submission', (
-      WidgetTester tester,
-    ) async {
+    testWidgets(
+        'shows duplicate suggestion dialog and switches tab on duplicate submission',
+        (WidgetTester tester) async {
       when(
         mockDataService.submitSuggestedTeam(any, any, any, any),
       ).thenAnswer((_) async => 'DUPLICATE');
@@ -407,12 +408,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Suggestion Already Exists'), findsOneWidget);
-      expect(
-        find.text(
-          'This team combination has already been suggested. Your submission has been counted as an upvote.',
-        ),
-        findsOneWidget,
+
+      await tester.tap(find.widgetWithText(TextButton, 'OK'));
+      await tester.pumpAndSettle();
+
+      final tabController = DefaultTabController.of(
+        tester.element(find.byType(TeamFormationPage)),
       );
+      expect(tabController.index, 1);
     });
 
     testWidgets('handles null roster', (WidgetTester tester) async {
@@ -476,6 +479,57 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Could not find a roster to link the suggestion to.'),
+          findsOneWidget);
+    });
+
+    testWidgets('does not submit when cancelling the dialog', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      verifyNever(mockDataService.submitSuggestedTeam(any, any, any, any));
+    });
+
+    testWidgets('shows generic error snackbar on other submission error', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDataService.submitSuggestedTeam(any, any, any, any),
+      ).thenAnswer((_) async => 'UNKNOWN_ERROR');
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Failed to submit suggestion: UNKNOWN_ERROR'),
           findsOneWidget);
     });
   });
