@@ -53,7 +53,7 @@ class _MyAppState extends State<MyApp> {
                 ),
                 useMaterial3: true,
               ),
-              home: const _LoginChecker(),
+              home: const LoginChecker(),
               routes: {
                 '/ratings': (context) => const HomePage(),
                 '/login': (context) => const LoginPage(),
@@ -69,8 +69,8 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class _LoginChecker extends StatelessWidget {
-  const _LoginChecker();
+class LoginChecker extends StatelessWidget {
+  const LoginChecker();
 
   @override
   Widget build(BuildContext context) {

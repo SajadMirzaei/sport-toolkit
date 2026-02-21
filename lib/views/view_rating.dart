@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/login_provider.dart';
 import '../widgets/table_component.dart';
 import '../widgets/add_player_dialog.dart';
-import '../services/api_service.dart';
+// import '../services/api_service.dart';
 
 class ViewRating extends StatefulWidget {
   const ViewRating({super.key, required this.title});
@@ -19,26 +19,29 @@ class ViewRatingState extends State<ViewRating> {
   String orderBy = 'Player';
   bool ascending = true;
   bool isLoading = true;
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService();
   final GlobalKey<AddPlayerDialogState> _dialogKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    // _fetchData();
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  Future<void> _fetchData() async {
-    setState(() {
-      isLoading = true;
-    });
-    data = await _apiService.fetchData();
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+  // Future<void> _fetchData() async {
+  //   // setState(() {
+  //   //   isLoading = true;
+  //   // });
+  //   // data = await _apiService.fetchData();
+  //   // if (mounted) {
+  //   //   setState(() {
+  //   //     isLoading = false;
+  //   //   });
+  //   // }
+  // }
 
   void _handleOpenDialog() {
     showDialog(
@@ -56,14 +59,14 @@ class ViewRatingState extends State<ViewRating> {
   }
 
   Future<void> _handleAddPlayer(Map<String, dynamic> newPlayer) async {
-    try {
-      await _apiService.handleAddPlayer(newPlayer);
-      _fetchData();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to add player')));
-    }
+    // try {
+    //   // await _apiService.handleAddPlayer(newPlayer);
+    //   _fetchData();
+    // } catch (e) {
+    //   ScaffoldMessenger.of(
+    //     context,
+    //   ).showSnackBar(const SnackBar(content: Text('Failed to add player')));
+    // }
   }
 
   void _handleSort(String property, bool ascending) {
@@ -118,7 +121,7 @@ class ViewRatingState extends State<ViewRating> {
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : Center(
-            child: Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TableComponent(
@@ -134,8 +137,9 @@ class ViewRatingState extends State<ViewRating> {
                     onPressed: _handleOpenDialog,
                     child: const Icon(Icons.add),
                   ),
-                )
+                ),
             ],
-          ));
+          ),
+        );
   }
 }
