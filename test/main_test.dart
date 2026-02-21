@@ -9,6 +9,7 @@ import 'package:myapp/main.dart';
 import 'package:myapp/views/login_page.dart';
 import 'package:myapp/providers/login_provider.dart';
 import 'package:myapp/services/data_service.dart';
+import 'package:myapp/constants.dart';
 
 import 'main_test.mocks.dart';
 
@@ -95,6 +96,14 @@ void main() {
   });
 
   group('HomePage', () {
+     testWidgets('displays the correct title', (tester) async {
+      when(mockLoginProvider.user).thenReturn(mockUser);
+
+      await tester.pumpWidget(createTestWidget(const HomePage()));
+
+      expect(find.text(kLoginPageTitle), findsOneWidget);
+    });
+
     testWidgets('shows admin tabs for admin user', (tester) async {
       when(mockLoginProvider.user).thenReturn(mockUser);
       when(mockLoginProvider.isAdmin).thenReturn(true);

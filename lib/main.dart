@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'constants.dart';
 import 'providers/login_provider.dart';
 import 'services/data_service.dart';
 import 'views/view_rating.dart';
@@ -50,7 +51,7 @@ class _MyAppState extends State<MyApp> {
               ChangeNotifierProvider(create: (_) => DataService()),
             ],
             child: MaterialApp(
-              title: 'Bay Area Futsal',
+              title: kLoginPageTitle,
               theme: ThemeData(
                 useMaterial3: true,
                 colorScheme: colorScheme,
@@ -163,7 +164,7 @@ class HomePage extends StatelessWidget {
         length: tabLength,
         child: Scaffold(
           appBar: AppBar(
-             title: const Text('Bay Area Futsal'),
+             title: const Text(kLoginPageTitle),
             bottom: TabBar(
               tabs: tabs,
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
