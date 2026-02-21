@@ -28,6 +28,11 @@ class DataService with ChangeNotifier {
   bool get isLoadingRoster => _isLoadingRoster;
   bool get isLoadingSuggestedTeams => _isLoadingSuggestedTeams;
 
+  @visibleForTesting
+  void setLatestRosterForTest(WeeklyRoster roster) {
+    _latestRoster = roster;
+  }
+
   String generateTeamHash(List<List<Player>> teams) {
     // 1. Sort players within each team by ID
     final sortedTeams = teams.map((team) {
@@ -206,9 +211,9 @@ class DataService with ChangeNotifier {
     if (rosterId.isEmpty) return 'Invalid roster ID.';
 
     final teamHash = generateTeamHash(teams);
-    final rosterRef = _firestore.collection('weekly_rosters').doc(rosterId);
-
+    
     try {
+      final rosterRef = _firestore.collection('weekly_rosters').doc(rosterId);
       final querySnapshot = await _firestore
           .collection('suggested_teams')
           .where('rosterId', isEqualTo: rosterRef)
