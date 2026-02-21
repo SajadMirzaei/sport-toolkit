@@ -155,6 +155,22 @@ void main() {
     expect(find.text('Failed to add player: Error'), findsOneWidget);
   });
 
+  testWidgets('can cancel the add player dialog', (tester) async {
+    await tester.pumpWidget(createPlayersPage(mockDataService));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    verifyNever(mockDataService.addPlayer(any));
+  });
+
 
   testWidgets('should submit roster and show success message', (tester) async {
     await tester.pumpWidget(createPlayersPage(mockDataService));
