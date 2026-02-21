@@ -36,6 +36,10 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color.fromARGB(255, 28, 121, 226),
+    );
+
     return FutureBuilder(
       future: _initFirebase(),
       builder: (context, snapshot) {
@@ -48,10 +52,54 @@ class _MyAppState extends State<MyApp> {
             child: MaterialApp(
               title: 'Bay Area Futsal',
               theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: const Color.fromARGB(255, 28, 121, 226),
-                ),
                 useMaterial3: true,
+                colorScheme: colorScheme,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  filled: true,
+                  fillColor: colorScheme.surface.withAlpha(150),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                   prefixIconColor: colorScheme.onSurfaceVariant,
+                ),
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
+                ),
+                 dialogTheme: DialogThemeData(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )
+                  )
+                ),
+                tabBarTheme: TabBarThemeData(
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: colorScheme.primary,
+                  ),
+                  labelColor: colorScheme.onPrimary,
+                  unselectedLabelColor: colorScheme.onSurface,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                ),
               ),
               home: const LoginChecker(),
               routes: {
@@ -74,7 +122,6 @@ class LoginChecker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize providers
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
     loginProvider.getCurrentUser();
 
@@ -118,10 +165,10 @@ class HomePage extends StatelessWidget {
         length: tabLength,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Bay Area Futsal'),
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+             title: const Text('Bay Area Futsal'),
             bottom: TabBar(
               tabs: tabs,
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
             ),
             actions: [
               TextButton(
@@ -134,10 +181,7 @@ class HomePage extends StatelessWidget {
                     Navigator.pushNamed(context, '/login');
                   }
                 },
-                child: Text(
-                  loginProvider.user != null ? 'Logout' : 'Login',
-                  style: const TextStyle(color: Colors.black),
-                ),
+                child: Text(loginProvider.user != null ? 'Logout' : 'Login'),
               ),
             ],
           ),

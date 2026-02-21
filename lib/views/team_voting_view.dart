@@ -24,6 +24,8 @@ class _TeamVotingViewState extends State<TeamVotingView> {
   Widget build(BuildContext context) {
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
     final userId = loginProvider.user?.uid;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       body: Consumer<DataService>(
@@ -33,11 +35,11 @@ class _TeamVotingViewState extends State<TeamVotingView> {
           }
 
           if (dataService.suggestedTeams.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No suggested teams available for the latest roster.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface.withOpacity(0.6)),
               ),
             );
           }
@@ -46,35 +48,38 @@ class _TeamVotingViewState extends State<TeamVotingView> {
             itemCount: dataService.suggestedTeams.length,
             itemBuilder: (context, index) {
               final suggestedTeam = dataService.suggestedTeams[index];
-              final cardColor = index.isEven ? Colors.amber.shade50 : Colors.amber.shade100;
+              final cardColor = index.isEven ? colorScheme.surface : colorScheme.surfaceVariant;
               final userVote = userId != null ? suggestedTeam.votedBy[userId] : null;
 
               return Card(
                 color: cardColor,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                elevation: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                elevation: 1,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.amber.shade300, width: 1),
+                  side: BorderSide(color: colorScheme.outline, width: 1),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ..._buildTeamViews(suggestedTeam.teams),
-                      const SizedBox(height: 8),
+                      ..._buildTeamViews(suggestedTeam.teams, theme),
+                      const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             'Suggested by: ${suggestedTeam.submittedBy}',
-                            style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                            style: theme.textTheme.bodySmall,
                           ),
                           Row(
                             children: [
                               IconButton(
-                                icon: Icon(userVote == 'up' ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined),
+                                icon: Icon(
+                                  userVote == 'up' ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                                  color: userVote == 'up' ? colorScheme.primary : colorScheme.onSurface,
+                                ),
                                 onPressed: () {
                                   if (userId != null) {
                                     dataService.vote(suggestedTeam, userId, 'up');
@@ -83,10 +88,13 @@ class _TeamVotingViewState extends State<TeamVotingView> {
                               ),
                               Text(
                                 '${suggestedTeam.upvotes - suggestedTeam.downvotes}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
                               ),
                               IconButton(
-                                icon: Icon(userVote == 'down' ? Icons.thumb_down_alt : Icons.thumb_down_alt_outlined),
+                                icon: Icon(
+                                  userVote == 'down' ? Icons.thumb_down_alt : Icons.thumb_down_alt_outlined,
+                                  color: userVote == 'down' ? colorScheme.primary : colorScheme.onSurface,
+                                ),
                                 onPressed: () {
                                   if (userId != null) {
                                     dataService.vote(suggestedTeam, userId, 'down');
@@ -108,18 +116,18 @@ class _TeamVotingViewState extends State<TeamVotingView> {
     );
   }
 
-  List<Widget> _buildTeamViews(List<List<Player>> teams) {
+  List<Widget> _buildTeamViews(List<List<Player>> teams, ThemeData theme) {
     List<Widget> teamWidgets = [];
     for (int i = 0; i < teams.length; i++) {
       teamWidgets.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Team ${i + 1}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -131,6 +139,9 @@ class _TeamVotingViewState extends State<TeamVotingView> {
           ),
         ),
       );
+      if (i < teams.length - 1) {
+        teamWidgets.add(const Divider());
+      }
     }
     return teamWidgets;
   }

@@ -133,7 +133,7 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
                 onPressed: () => Navigator.of(context).pop(false),
                 child: const Text('Cancel'),
               ),
-              TextButton(
+              ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('Submit'),
               ),
@@ -227,10 +227,6 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               child: ElevatedButton(
                 onPressed: _submitTeams,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: Theme.of(context).textTheme.titleMedium,
-                ),
                 child: const Text('Submit Team Suggestion'),
               ),
             ),
@@ -241,6 +237,8 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
   }
 
   Widget _buildUnassignedPlayersBox() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DragTarget<Player>(
       onWillAccept: (player) => true,
       onAccept: (player) {
@@ -254,27 +252,30 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
         });
       },
       builder: (context, candidateData, rejectedData) {
-        return Container(
-          margin: const EdgeInsets.all(8.0),
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8.0),
-            color:
-                candidateData.isNotEmpty
-                    ? Colors.lightBlue.withOpacity(0.3)
-                    : Colors.white,
+        final isTarget = candidateData.isNotEmpty;
+        return Card(
+          elevation: isTarget ? 4 : 1,
+          color: isTarget ? colorScheme.primaryContainer.withAlpha(150) : colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isTarget ? colorScheme.primary : colorScheme.outline,
+              width: isTarget ? 2 : 1,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Unassigned Players',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const Divider(),
-              _buildPlayerList(_unassignedPlayers, 'unassigned'),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Unassigned Players',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+                ),
+                const SizedBox(height: 8),
+                _buildPlayerList(_unassignedPlayers, 'unassigned'),
+              ],
+            ),
           ),
         );
       },
@@ -282,6 +283,8 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
   }
 
   Widget _buildTeamBox(int teamIndex) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DragTarget<Player>(
       onWillAccept: (player) => true,
       onAccept: (player) {
@@ -294,27 +297,30 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
         });
       },
       builder: (context, candidateData, rejectedData) {
-        return Container(
-          margin: const EdgeInsets.all(8.0),
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8.0),
-            color:
-                candidateData.isNotEmpty
-                    ? Colors.lightGreen.withOpacity(0.3)
-                    : Colors.white,
+        final isTarget = candidateData.isNotEmpty;
+        return Card(
+          elevation: isTarget ? 4 : 1,
+          color: isTarget ? colorScheme.secondaryContainer.withAlpha(150) : colorScheme.surface,
+           shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isTarget ? colorScheme.secondary : colorScheme.outline,
+              width: isTarget ? 2 : 1,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Team ${teamIndex + 1}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const Divider(),
-              _buildPlayerList(_teams[teamIndex], 'team_$teamIndex'),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Team ${teamIndex + 1}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+                ),
+                const SizedBox(height: 8),
+                _buildPlayerList(_teams[teamIndex], 'team_$teamIndex'),
+              ],
+            ),
           ),
         );
       },
@@ -330,30 +336,31 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
       return Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(16.0),
-        child: Text(message, style: const TextStyle(color: Colors.grey)),
+        child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Wrap(
-        spacing: 8.0,
-        runSpacing: 4.0,
-        children:
-            players.map((player) {
-              return Draggable<Player>(
-                data: player,
-                feedback: Material(
-                  elevation: 4.0,
-                  child: Chip(label: Text(player.name)),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: 0.5,
-                  child: Chip(label: Text(player.name)),
-                ),
-                child: Chip(label: Text(player.name)),
-              );
-            }).toList(),
-      ),
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: players.map((player) {
+        return Draggable<Player>(
+          data: player,
+          feedback: Material(
+            color: Colors.transparent,
+            child: Chip(
+              label: Text(player.name),
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.5,
+            child: Chip(label: Text(player.name)),
+          ),
+          child: Chip(label: Text(player.name)),
+        );
+      }).toList(),
     );
   }
 }

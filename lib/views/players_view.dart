@@ -47,10 +47,13 @@ class _PlayersPageState extends State<PlayersPage> {
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Add New Player'),
-              content: TextField(
+              content: TextFormField(
                 controller: nameController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Player Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Player Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
               ),
               actions: [
                 TextButton(
@@ -87,7 +90,7 @@ class _PlayersPageState extends State<PlayersPage> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('Add'),
                 ),
@@ -101,7 +104,6 @@ class _PlayersPageState extends State<PlayersPage> {
 
   Future<void> _submitRoster() async {
     final dataService = Provider.of<DataService>(context, listen: false);
-    // Pass the number of teams when submitting
     final error = await dataService.submitRoster(_selectedPlayerIds.toList(), _numberOfTeams);
 
     if (mounted) {
@@ -122,7 +124,6 @@ class _PlayersPageState extends State<PlayersPage> {
     return Scaffold(
       body: Consumer<DataService>(
         builder: (context, dataService, child) {
-          
           if (dataService.isLoadingPlayers || (dataService.isLoadingRoster && !_isInitialized)) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -232,10 +233,13 @@ class _PlayersPageState extends State<PlayersPage> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: _selectedPlayerIds.isNotEmpty ? _submitRoster : null,
-          child: const Text('Submit Roster for the Week'),
+        padding: const EdgeInsets.all(16.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _selectedPlayerIds.isNotEmpty ? _submitRoster : null,
+            child: const Text('Submit Roster for the Week'),
+          ),
         ),
       ),
     );

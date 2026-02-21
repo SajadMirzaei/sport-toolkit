@@ -221,7 +221,7 @@ void main() {
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit'));
       await tester.pumpAndSettle();
 
       expect(
@@ -250,7 +250,7 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Submit Suggestion'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit'));
       await tester.pumpAndSettle();
 
       verify(
@@ -369,7 +369,7 @@ void main() {
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit'));
       await tester.pumpAndSettle();
 
       expect(
@@ -404,7 +404,7 @@ void main() {
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit'));
       await tester.pumpAndSettle();
 
       expect(find.text('Suggestion Already Exists'), findsOneWidget);
@@ -526,7 +526,7 @@ void main() {
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit'));
       await tester.pumpAndSettle();
 
       expect(find.text('Failed to submit suggestion: UNKNOWN_ERROR'),
