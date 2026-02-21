@@ -12,10 +12,14 @@ class TeamFormationPage extends StatefulWidget {
   State<TeamFormationPage> createState() => _TeamFormationPageState();
 }
 
-class _TeamFormationPageState extends State<TeamFormationPage> {
+class _TeamFormationPageState extends State<TeamFormationPage>
+    with AutomaticKeepAliveClientMixin<TeamFormationPage> { // Added mixin
   List<Player> _unassignedPlayers = [];
   late List<List<Player>> _teams;
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true; // Keep state alive
 
   @override
   void initState() {
@@ -205,6 +209,7 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Added for AutomaticKeepAliveClientMixin
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
