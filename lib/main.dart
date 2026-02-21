@@ -6,13 +6,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'providers/login_provider.dart';
 import 'services/data_service.dart';
-import 'example_main.dart';
 import 'views/view_rating.dart';
 import 'views/login_page.dart';
 import 'views/teams_view.dart';
 import 'views/players_view.dart';
 import 'firebase_options.dart';
-import 'views/new_feature.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,10 +55,8 @@ class _MyAppState extends State<MyApp> {
               ),
               home: const _LoginChecker(),
               routes: {
-                '/example': (context) => const ExamplePage(),
                 '/ratings': (context) => const HomePage(),
                 '/login': (context) => const LoginPage(),
-                '/new_feature': (context) => const NewFeature(),
               },
             ),
           );
@@ -101,7 +97,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LoginProvider>(builder: (context, loginProvider, child) {
       final bool isAdmin = loginProvider.isAdmin;
-      final int tabLength = isAdmin ? 4 : 2;
+      final int tabLength = isAdmin ? 3 : 2;
 
       final List<Widget> tabs = [
         const Tab(text: 'Ratings'),
@@ -109,7 +105,6 @@ class HomePage extends StatelessWidget {
       ];
       if (isAdmin) {
         tabs.add(const Tab(text: 'Players'));
-        tabs.add(const Tab(text: 'New Feature'));
       }
 
       final List<Widget> tabViews = [
@@ -118,7 +113,6 @@ class HomePage extends StatelessWidget {
       ];
       if (isAdmin) {
         tabViews.add(const PlayersPage());
-        tabViews.add(const NewFeature());
       }
       return DefaultTabController(
         length: tabLength,
@@ -130,13 +124,6 @@ class HomePage extends StatelessWidget {
               tabs: tabs,
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/example');
-                },
-                child:
-                    const Text('Example', style: TextStyle(color: Colors.black)),
-              ),
               TextButton(
                 onPressed: () {
                   if (loginProvider.user != null) {
