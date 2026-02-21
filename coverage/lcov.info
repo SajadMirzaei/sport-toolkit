@@ -218,7 +218,7 @@ DA:24,3
 DA:26,1
 DA:27,1
 DA:28,2
-DA:30,0
+DA:30,3
 DA:34,2
 DA:37,4
 DA:39,1
@@ -247,7 +247,7 @@ DA:82,6
 DA:85,2
 DA:86,2
 LF:41
-LH:40
+LH:41
 end_of_record
 SF:lib/views/team_formation_view.dart
 DA:9,3

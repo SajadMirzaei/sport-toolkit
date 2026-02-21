@@ -73,6 +73,27 @@ void main() {
         },
       );
 
+      test('handles error when updating display name fails', () async {
+        // Arrange
+        when(mockUser.email).thenReturn('newbie@example.com');
+        when(mockUser.displayName).thenReturn(null); // Trigger the update logic
+        when(mockAuth.currentUser).thenReturn(mockUser);
+
+        // Mock the updateDisplayName to throw an error
+        when(mockUser.updateDisplayName('newbie'))
+            .thenThrow(FirebaseAuthException(code: 'update-failed'));
+
+        // Act: Instantiating the provider will call _initUser, which should catch the error.
+        final provider = LoginProvider(mockAuth);
+
+        // Assert
+        await untilCalled(mockUser.updateDisplayName(any));
+
+        // Verify the user was still set, even though display name update failed.
+        expect(provider.user, isNotNull);
+        verify(mockUser.updateDisplayName('newbie')).called(1);
+      });
+
       test('logout clears the user and notifies listeners', () async {
         when(mockUser.email).thenReturn(regularUserEmail);
         when(mockUser.displayName).thenReturn('regular');
