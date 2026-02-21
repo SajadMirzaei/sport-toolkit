@@ -79,18 +79,18 @@ void main() {
     );
   }
 
-  Future<void> dragPlayerToTeam(
+  Future<void> dragPlayerToTarget(
     WidgetTester tester,
     String playerName,
-    String teamName,
+    Finder target,
   ) async {
     final playerChip = find.widgetWithText(Chip, playerName);
-    final teamTarget = findDragTargetByText(teamName);
     final dragOffset =
-        tester.getCenter(teamTarget) - tester.getCenter(playerChip);
+        tester.getCenter(target) - tester.getCenter(playerChip);
     await tester.drag(playerChip, dragOffset);
     await tester.pumpAndSettle();
   }
+
 
   group('TeamFormationPage', () {
     testWidgets('shows loading indicator when loading', (
@@ -136,7 +136,8 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      final teamTarget = findDragTargetByText('Team 1');
+      await dragPlayerToTarget(tester, 'Player 1', teamTarget);
 
       final team1Target = findDragTargetByText('Team 1');
       expect(
@@ -153,14 +154,93 @@ void main() {
       );
     });
 
+    testWidgets('can drag a player from a team back to unassigned', (
+      WidgetTester tester) async {
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final teamTarget = findDragTargetByText('Team 1');
+      await dragPlayerToTarget(tester, 'Player 1', teamTarget);
+      await tester.pumpAndSettle(); // Settle after first drag
+
+      final unassignedTarget = findDragTargetByText('Unassigned Players');
+      await dragPlayerToTarget(tester, 'Player 1', unassignedTarget);
+      await tester.pumpAndSettle(); // Settle after second drag
+
+       final unassignedPlayersBox = findDragTargetByText('Unassigned Players');
+      expect(
+        find.descendant(
+          of: unassignedPlayersBox,
+          matching: find.text('Player 1'),
+        ),
+        findsOneWidget,
+      );
+      final team1Target = findDragTargetByText('Team 1');
+      expect(
+        find.descendant(of: team1Target, matching: find.text('Player 1')),
+        findsNothing,
+      );
+    });
+
+
+    testWidgets('pull to refresh re-initializes players and teams', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      // Verify initial state
+      verify(mockDataService.fetchPlayers()).called(1);
+      verify(mockDataService.fetchLatestRoster()).called(1);
+
+      // Simulate pull to refresh
+      await tester.fling(find.text('Unassigned Players'), const Offset(0, 300), 1000);
+      await tester.pumpAndSettle();
+
+      // Verify that the data is fetched again
+      verify(mockDataService.fetchPlayers()).called(1);
+      verify(mockDataService.fetchLatestRoster()).called(1);
+    });
+
+    testWidgets('shows error snackbar on submission failure', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDataService.submitSuggestedTeam(any, any, any, any),
+      ).thenThrow(Exception('An error occurred'));
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Submit'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('An error occurred while submitting. Please try again.'),
+        findsOneWidget,
+      );
+    });
+
+
     testWidgets('can submit a valid team suggestion', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -184,7 +264,8 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
+      final team1Target = findDragTargetByText('Team 1');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -219,9 +300,10 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 2', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 3', 'Team 1');
+      final team1Target = findDragTargetByText('Team 1');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team1Target);
+      await dragPlayerToTarget(tester, 'Player 3', team1Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -258,9 +340,11 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 2', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 3', 'Team 2');
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team1Target);
+      await dragPlayerToTarget(tester, 'Player 3', team2Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -280,8 +364,10 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -308,8 +394,10 @@ void main() {
       await tester.pumpWidget(createTeamFormationPage(tester));
       await tester.pumpAndSettle();
 
-      await dragPlayerToTeam(tester, 'Player 1', 'Team 1');
-      await dragPlayerToTeam(tester, 'Player 2', 'Team 2');
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
 
       await tester.tap(
         find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
@@ -325,6 +413,70 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('handles null roster', (WidgetTester tester) async {
+      when(mockDataService.latestRoster).thenReturn(null);
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unassigned Players'), findsOneWidget);
+      expect(find.text('Team 1'), findsOneWidget);
+      expect(find.text('Team 2'), findsOneWidget);
+      expect(find.text('All players have been assigned!'), findsOneWidget);
+    });
+
+    testWidgets('shows snackbar if user is not logged in', (
+      WidgetTester tester,
+    ) async {
+      when(mockLoginProvider.user).thenReturn(null);
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('You must be logged in to submit a suggestion.'),
+          findsOneWidget);
+    });
+
+    testWidgets('shows snackbar if rosterId is missing', (
+      WidgetTester tester,
+    ) async {
+      when(mockDataService.latestRoster).thenReturn(
+        WeeklyRoster(
+          id: '',
+          date: '2023-10-27',
+          playerNames: ['Player 1', 'Player 2'],
+          playerIds: ['p1', 'p2'],
+          numberOfTeams: 2,
+        ),
+      );
+
+      await tester.pumpWidget(createTeamFormationPage(tester));
+      await tester.pumpAndSettle();
+
+      final team1Target = findDragTargetByText('Team 1');
+      final team2Target = findDragTargetByText('Team 2');
+      await dragPlayerToTarget(tester, 'Player 1', team1Target);
+      await dragPlayerToTarget(tester, 'Player 2', team2Target);
+
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Submit Team Suggestion'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not find a roster to link the suggestion to.'),
+          findsOneWidget);
     });
   });
 }

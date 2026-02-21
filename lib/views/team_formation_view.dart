@@ -142,50 +142,61 @@ class _TeamFormationPageState extends State<TeamFormationPage> {
     );
 
     if (confirmed == true) {
-      final result = await dataService.submitSuggestedTeam(
-        _teams,
-        rosterId,
-        username,
-        userId,
-      );
+      try {
+        final result = await dataService.submitSuggestedTeam(
+          _teams,
+          rosterId,
+          username,
+          userId,
+        );
 
-      if (mounted) {
-        if (result == null) {
+        if (mounted) {
+          if (result == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Team suggestion submitted successfully! Your vote has been counted.',
+                ),
+              ),
+            );
+            _initializeTeamsAndPlayers(); // Reset the page
+            DefaultTabController.of(context).animateTo(1); // Switch to voting tab
+          } else if (result == 'DUPLICATE') {
+            await showDialog<void>(
+              context: context,
+              builder: (BuildContext dialogContext) {
+                return AlertDialog(
+                  title: const Text('Suggestion Already Exists'),
+                  content: const Text(
+                    'This team combination has already been suggested. Your submission has been counted as an upvote.',
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('OK'),
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+            if (mounted) {
+              DefaultTabController.of(context).animateTo(1);
+            }
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to submit suggestion: $result')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Team suggestion submitted successfully! Your vote has been counted.',
-              ),
+                  'An error occurred while submitting. Please try again.'),
             ),
-          );
-          _initializeTeamsAndPlayers(); // Reset the page
-          DefaultTabController.of(context).animateTo(1); // Switch to voting tab
-        } else if (result == 'DUPLICATE') {
-          await showDialog<void>(
-            context: context,
-            builder: (BuildContext dialogContext) {
-              return AlertDialog(
-                title: const Text('Suggestion Already Exists'),
-                content: const Text(
-                  'This team combination has already been suggested. Your submission has been counted as an upvote.',
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-          if (mounted) {
-            DefaultTabController.of(context).animateTo(1);
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to submit suggestion: $result')),
           );
         }
       }
