@@ -29,67 +29,127 @@ void main() {
       p2 = Player(id: 'p2', name: 'Player 2');
       p3 = Player(id: 'p3', name: 'Player 3');
       p4 = Player(id: 'p4', name: 'Player 4');
-      
+
       await fakeFirestore.collection('players').doc(p1.id).set(p1.toJson());
       await fakeFirestore.collection('players').doc(p2.id).set(p2.toJson());
       await fakeFirestore.collection('players').doc(p3.id).set(p3.toJson());
       await fakeFirestore.collection('players').doc(p4.id).set(p4.toJson());
     });
 
-    test('does not cancel upvote when submitting a duplicate of an already-upvoted team', () async {
-      const rosterId = 'roster1';
-      const userId = 'user123';
-      final teams = [[p1], [p2]];
-      final teamHash = dataService.generateTeamHash(teams);
-      final rosterRef = fakeFirestore.collection('weekly_rosters').doc(rosterId);
-      const suggestionId = 'suggestion1';
+    test(
+      'does not cancel upvote when submitting a duplicate of an already-upvoted team',
+      () async {
+        const rosterId = 'roster1';
+        const userId = 'user123';
+        final teams = [
+          [p1],
+          [p2],
+        ];
+        final teamHash = dataService.generateTeamHash(teams);
+        final rosterRef = fakeFirestore
+            .collection('weekly_rosters')
+            .doc(rosterId);
+        const suggestionId = 'suggestion1';
 
-      await fakeFirestore.collection('suggested_teams').doc(suggestionId).set({
-        'rosterId': rosterRef,
-        'teamHash': teamHash,
-        'submittedBy': 'Another User',
-        'upvotes': 1,
-        'downvotes': 0,
-        'votedBy': {userId: 'up'}, 
-        'teams': {'team_0': [p1.toJson()], 'team_1': [p2.toJson()]},
-      });
-      await fakeFirestore.collection('weekly_rosters').doc(rosterId).set({
-        'date': Timestamp.now(), 'present_players': [p1.id, p2.id], 'number_of_teams': 2
-      });
-      await dataService.fetchLatestRoster();
+        await fakeFirestore.collection('suggested_teams').doc(suggestionId).set(
+          {
+            'rosterId': rosterRef,
+            'teamHash': teamHash,
+            'submittedBy': 'Another User',
+            'upvotes': 1,
+            'downvotes': 0,
+            'votedBy': {userId: 'up'},
+            'teams': {
+              'team_0': [p1.toJson()],
+              'team_1': [p2.toJson()],
+            },
+          },
+        );
+        await fakeFirestore.collection('weekly_rosters').doc(rosterId).set({
+          'date': Timestamp.now(),
+          'present_players': [p1.id, p2.id],
+          'number_of_teams': 2,
+        });
+        await dataService.fetchLatestRoster();
 
-      final result = await dataService.submitSuggestedTeam(teams, rosterId, 'Test User', userId);
+        final result = await dataService.submitSuggestedTeam(
+          teams,
+          rosterId,
+          'Test User',
+          userId,
+        );
 
-      expect(result, 'DUPLICATE');
-      final doc = await fakeFirestore.collection('suggested_teams').doc(suggestionId).get();
-      final suggestion = SuggestedTeam.fromFirestore(doc);
-      expect(suggestion.upvotes, 1);
-      expect(suggestion.votedBy[userId], 'up');
-    });
+        expect(result, 'DUPLICATE');
+        final doc =
+            await fakeFirestore
+                .collection('suggested_teams')
+                .doc(suggestionId)
+                .get();
+        final suggestion = SuggestedTeam.fromFirestore(doc);
+        expect(suggestion.upvotes, 1);
+        expect(suggestion.votedBy[userId], 'up');
+      },
+    );
 
     group('generateTeamHash', () {
       test('is deterministic for the same team structure', () {
-        final teams1 = [[p1, p2], [p3, p4]];
-        final teams2 = [[p1, p2], [p3, p4]];
-        expect(dataService.generateTeamHash(teams1), dataService.generateTeamHash(teams2));
+        final teams1 = [
+          [p1, p2],
+          [p3, p4],
+        ];
+        final teams2 = [
+          [p1, p2],
+          [p3, p4],
+        ];
+        expect(
+          dataService.generateTeamHash(teams1),
+          dataService.generateTeamHash(teams2),
+        );
       });
 
       test('is the same regardless of player order within teams', () {
-        final teams1 = [[p1, p2], [p3, p4]];
-        final teams2 = [[p2, p1], [p4, p3]];
-        expect(dataService.generateTeamHash(teams1), dataService.generateTeamHash(teams2));
+        final teams1 = [
+          [p1, p2],
+          [p3, p4],
+        ];
+        final teams2 = [
+          [p2, p1],
+          [p4, p3],
+        ];
+        expect(
+          dataService.generateTeamHash(teams1),
+          dataService.generateTeamHash(teams2),
+        );
       });
 
       test('is the same regardless of team order', () {
-        final teams1 = [[p1, p2], [p3, p4]];
-        final teams2 = [[p3, p4], [p1, p2]];
-        expect(dataService.generateTeamHash(teams1), dataService.generateTeamHash(teams2));
+        final teams1 = [
+          [p1, p2],
+          [p3, p4],
+        ];
+        final teams2 = [
+          [p3, p4],
+          [p1, p2],
+        ];
+        expect(
+          dataService.generateTeamHash(teams1),
+          dataService.generateTeamHash(teams2),
+        );
       });
 
       test('is different for different team structures', () {
-        final teams1 = [[p1, p3], [p2, p4]];
-        final teams2 = [[p1, p2], [p3, p4]];
-        expect(dataService.generateTeamHash(teams1), isNot(dataService.generateTeamHash(teams2)));
+        final teams1 = [
+          [p1, p3],
+          [p2, p4],
+        ];
+        final teams2 = [
+          [p1, p2],
+          [p3, p4],
+        ];
+        expect(
+          dataService.generateTeamHash(teams1),
+          isNot(dataService.generateTeamHash(teams2)),
+        );
       });
     });
 
@@ -99,7 +159,9 @@ void main() {
       const userId = 'user1';
 
       setUp(() async {
-        suggestionRef = fakeFirestore.collection('suggested_teams').doc('suggestion1');
+        suggestionRef = fakeFirestore
+            .collection('suggested_teams')
+            .doc('suggestion1');
         await suggestionRef.set({
           'rosterId': fakeFirestore.collection('weekly_rosters').doc('roster1'),
           'teamHash': 'hash1',
@@ -128,7 +190,7 @@ void main() {
         expect(finalSuggestion.upvotes, initialSuggestion.upvotes - 1);
         expect(finalSuggestion.votedBy.containsKey('submitter_id'), isFalse);
       });
-      
+
       test('changing vote from down to up works correctly', () async {
         await dataService.vote(initialSuggestion, 'user2', 'up');
         final finalDoc = await suggestionRef.get();
@@ -165,21 +227,30 @@ void main() {
       test('addPlayer adds a player successfully', () async {
         final result = await dataService.addPlayer('New Player');
         expect(result, isNull);
-        final querySnapshot = await fakeFirestore.collection('players').where('name', isEqualTo: 'New Player').get();
+        final querySnapshot =
+            await fakeFirestore
+                .collection('players')
+                .where('name', isEqualTo: 'New Player')
+                .get();
         expect(querySnapshot.docs.length, 1);
         expect(dataService.players.any((p) => p.name == 'New Player'), isTrue);
       });
     });
 
     group('Roster Management', () {
-        test('fetchLatestRoster loads roster and player names', () async {
+      test('fetchLatestRoster loads roster and player names', () async {
         await fakeFirestore.collection('weekly_rosters').add({
-          'present_players': ['p1', 'p2'], 'date': Timestamp.now(), 'number_of_teams': 2
+          'present_players': ['p1', 'p2'],
+          'date': Timestamp.now(),
+          'number_of_teams': 2,
         });
         await dataService.fetchLatestRoster();
         expect(dataService.latestRoster, isNotNull);
         expect(dataService.latestRoster!.playerIds, containsAll(['p1', 'p2']));
-        expect(dataService.latestRoster!.playerNames, containsAll(['Player 1', 'Player 2']));
+        expect(
+          dataService.latestRoster!.playerNames,
+          containsAll(['Player 1', 'Player 2']),
+        );
       });
 
       test('fetchLatestRoster handles no roster found', () async {
@@ -198,7 +269,8 @@ void main() {
         final playerIds = ['p1', 'p2'];
         final result = await dataService.submitRoster(playerIds, 2);
         expect(result, isNull);
-        final querySnapshot = await fakeFirestore.collection('weekly_rosters').get();
+        final querySnapshot =
+            await fakeFirestore.collection('weekly_rosters').get();
         expect(querySnapshot.docs.length, 1);
         final rosterData = querySnapshot.docs.first.data();
         expect(rosterData['present_players'], playerIds);
@@ -206,17 +278,26 @@ void main() {
       });
 
       test('submitRoster updates an existing roster', () async {
-        final initialDoc = await fakeFirestore.collection('weekly_rosters').add({
-          'date': Timestamp.now(), 'present_players': ['p1'], 'number_of_teams': 1,
-        });
+        final initialDoc = await fakeFirestore.collection('weekly_rosters').add(
+          {
+            'date': Timestamp.now(),
+            'present_players': ['p1'],
+            'number_of_teams': 1,
+          },
+        );
         await dataService.fetchLatestRoster();
         expect(dataService.latestRoster!.id, initialDoc.id);
         final updatedPlayerIds = ['p1', 'p2', 'p3'];
         final result = await dataService.submitRoster(updatedPlayerIds, 3);
         expect(result, isNull);
-        final allRosters = await fakeFirestore.collection('weekly_rosters').get();
+        final allRosters =
+            await fakeFirestore.collection('weekly_rosters').get();
         expect(allRosters.docs.length, 1);
-        final updatedDoc = await fakeFirestore.collection('weekly_rosters').doc(initialDoc.id).get();
+        final updatedDoc =
+            await fakeFirestore
+                .collection('weekly_rosters')
+                .doc(initialDoc.id)
+                .get();
         expect(updatedDoc.data()!['present_players'], updatedPlayerIds);
         expect(updatedDoc.data()!['number_of_teams'], 3);
       });
@@ -224,10 +305,14 @@ void main() {
 
     group('fetchPlayers', () {
       test('fetches players from firestore and sorts them by name', () async {
-        await fakeFirestore.collection('players').doc('p_c').set({'name': 'Charlie'});
-        await fakeFirestore.collection('players').doc('p_a').set({'name': 'Alice'});
+        await fakeFirestore.collection('players').doc('p_c').set({
+          'name': 'Charlie',
+        });
+        await fakeFirestore.collection('players').doc('p_a').set({
+          'name': 'Alice',
+        });
         await dataService.fetchPlayers();
-        expect(dataService.players.length, 6); 
+        expect(dataService.players.length, 6);
         expect(dataService.players[0].name, 'Alice');
         expect(dataService.players[1].name, 'Charlie');
         expect(dataService.players[2].name, 'Player 1');
@@ -236,13 +321,37 @@ void main() {
 
     group('fetchSuggestedTeams', () {
       test('fetches and sorts suggested teams for a roster', () async {
-        final rosterRef = fakeFirestore.collection('weekly_rosters').doc('roster1');
-        await rosterRef.set({ 'date': Timestamp.now(), 'present_players': [], 'number_of_teams': 2 });
+        final rosterRef = fakeFirestore
+            .collection('weekly_rosters')
+            .doc('roster1');
+        await rosterRef.set({
+          'date': Timestamp.now(),
+          'present_players': [],
+          'number_of_teams': 2,
+        });
         await dataService.fetchLatestRoster();
         expect(dataService.latestRoster!.id, 'roster1');
-        await fakeFirestore.collection('suggested_teams').add({'rosterId': rosterRef, 'upvotes': 5, 'downvotes': 1, 'teamHash': 'a', 'teams': {}});
-        await fakeFirestore.collection('suggested_teams').add({'rosterId': rosterRef, 'upvotes': 10, 'downvotes': 8, 'teamHash': 'b', 'teams': {}});
-        await fakeFirestore.collection('suggested_teams').add({'rosterId': rosterRef, 'upvotes': 8, 'downvotes': 2, 'teamHash': 'c', 'teams': {}});
+        await fakeFirestore.collection('suggested_teams').add({
+          'rosterId': rosterRef,
+          'upvotes': 5,
+          'downvotes': 1,
+          'teamHash': 'a',
+          'teams': {},
+        });
+        await fakeFirestore.collection('suggested_teams').add({
+          'rosterId': rosterRef,
+          'upvotes': 10,
+          'downvotes': 8,
+          'teamHash': 'b',
+          'teams': {},
+        });
+        await fakeFirestore.collection('suggested_teams').add({
+          'rosterId': rosterRef,
+          'upvotes': 8,
+          'downvotes': 2,
+          'teamHash': 'c',
+          'teams': {},
+        });
         await dataService.fetchSuggestedTeams();
         expect(dataService.suggestedTeams.length, 3);
         expect(dataService.suggestedTeams[0].teamHash, 'c');
@@ -252,7 +361,17 @@ void main() {
 
       test('clears teams if no roster is present', () async {
         dataService = DataService.test(fakeFirestore);
-        dataService.suggestedTeams.add(SuggestedTeam(id: 's1', teams: [], submittedBy: '', upvotes: 1, downvotes: 0, votedBy: {}, teamHash: ''));
+        dataService.suggestedTeams.add(
+          SuggestedTeam(
+            id: 's1',
+            teams: [],
+            submittedBy: '',
+            upvotes: 1,
+            downvotes: 0,
+            votedBy: {},
+            teamHash: '',
+          ),
+        );
         expect(dataService.suggestedTeams, isNotEmpty);
         await dataService.fetchSuggestedTeams();
         expect(dataService.suggestedTeams, isEmpty);
@@ -261,17 +380,32 @@ void main() {
 
     group('submitSuggestedTeam', () {
       test('returns error for invalid roster ID', () async {
-        final result = await dataService.submitSuggestedTeam([], '', 'user', 'uid');
+        final result = await dataService.submitSuggestedTeam(
+          [],
+          '',
+          'user',
+          'uid',
+        );
         expect(result, 'Invalid roster ID.');
       });
 
       test('creates a new suggestion', () async {
         await fakeFirestore.collection('weekly_rosters').doc('roster1').set({
-          'date': Timestamp.now(), 'present_players': ['p1', 'p2'], 'number_of_teams': 2
+          'date': Timestamp.now(),
+          'present_players': ['p1', 'p2'],
+          'number_of_teams': 2,
         });
         await dataService.fetchLatestRoster();
-        final teams = [[p1], [p2]];
-        final result = await dataService.submitSuggestedTeam(teams, 'roster1', 'test_user', 'user_id');
+        final teams = [
+          [p1],
+          [p2],
+        ];
+        final result = await dataService.submitSuggestedTeam(
+          teams,
+          'roster1',
+          'test_user',
+          'user_id',
+        );
         expect(result, isNull);
         final query = await fakeFirestore.collection('suggested_teams').get();
         expect(query.docs.length, 1);
@@ -300,7 +434,9 @@ void main() {
       final erroringFirestore = ErroringFakeFirebaseFirestore();
       dataService = DataService.test(erroringFirestore);
       final List<bool> loadingStates = [];
-      dataService.addListener(() => loadingStates.add(dataService.isLoadingPlayers));
+      dataService.addListener(
+        () => loadingStates.add(dataService.isLoadingPlayers),
+      );
       await dataService.fetchPlayers();
       expect(loadingStates, [true, false]);
       expect(dataService.players, isEmpty);
@@ -310,7 +446,9 @@ void main() {
       final erroringFirestore = ErroringFakeFirebaseFirestore();
       dataService = DataService.test(erroringFirestore);
       final List<bool> loadingStates = [];
-      dataService.addListener(() => loadingStates.add(dataService.isLoadingRoster));
+      dataService.addListener(
+        () => loadingStates.add(dataService.isLoadingRoster),
+      );
       await dataService.fetchLatestRoster();
       expect(loadingStates, [true, false]);
       expect(dataService.latestRoster?.date, 'Error fetching roster');
@@ -319,9 +457,19 @@ void main() {
     test('fetchSuggestedTeams handles errors and sets loading state', () async {
       final erroringFirestore = ErroringFakeFirebaseFirestore();
       dataService = DataService.test(erroringFirestore);
-      dataService.setLatestRosterForTest(WeeklyRoster(id: 'roster1', date: '', playerNames: [], playerIds: [], numberOfTeams: 2));
+      dataService.setLatestRosterForTest(
+        WeeklyRoster(
+          id: 'roster1',
+          date: '',
+          playerNames: [],
+          playerIds: [],
+          numberOfTeams: 2,
+        ),
+      );
       final List<bool> loadingStates = [];
-      dataService.addListener(() => loadingStates.add(dataService.isLoadingSuggestedTeams));
+      dataService.addListener(
+        () => loadingStates.add(dataService.isLoadingSuggestedTeams),
+      );
       await dataService.fetchSuggestedTeams();
       expect(loadingStates, [true, false]);
       expect(dataService.suggestedTeams, isEmpty);
@@ -344,22 +492,48 @@ void main() {
     test('submitSuggestedTeam handles errors gracefully', () async {
       final erroringFirestore = ErroringFakeFirebaseFirestore();
       dataService = DataService.test(erroringFirestore);
-      final result = await dataService.submitSuggestedTeam([], 'roster1', 'user1', 'uid1');
+      final result = await dataService.submitSuggestedTeam(
+        [],
+        'roster1',
+        'user1',
+        'uid1',
+      );
       expect(result, isNotNull);
     });
 
-    test('submitSuggestedTeam with duplicate that user already upvoted does not re-upvote', () async {
-      final roster = await fakeFirestore.collection('weekly_rosters').add({
-        'date': Timestamp.now(), 'present_players': ['p1', 'p2'], 'number_of_teams': 1,
-      });
-      final teams = [[Player(id: 'p1', name: 'Player 1')], [Player(id: 'p2', name: 'Player 2')]];
-      await dataService.fetchLatestRoster();
-      await dataService.submitSuggestedTeam(teams, roster.id, 'user1', 'uid1');
-      final result = await dataService.submitSuggestedTeam(teams, roster.id, 'user1', 'uid1');
-      expect(result, 'DUPLICATE');
-      final suggestion = (await fakeFirestore.collection('suggested_teams').get()).docs.first;
-      expect(suggestion.data()!['upvotes'], 1);
-    });
+    test(
+      'submitSuggestedTeam with duplicate that user already upvoted does not re-upvote',
+      () async {
+        final roster = await fakeFirestore.collection('weekly_rosters').add({
+          'date': Timestamp.now(),
+          'present_players': ['p1', 'p2'],
+          'number_of_teams': 1,
+        });
+        final teams = [
+          [Player(id: 'p1', name: 'Player 1')],
+          [Player(id: 'p2', name: 'Player 2')],
+        ];
+        await dataService.fetchLatestRoster();
+        await dataService.submitSuggestedTeam(
+          teams,
+          roster.id,
+          'user1',
+          'uid1',
+        );
+        final result = await dataService.submitSuggestedTeam(
+          teams,
+          roster.id,
+          'user1',
+          'uid1',
+        );
+        expect(result, 'DUPLICATE');
+        final suggestion =
+            (await fakeFirestore.collection('suggested_teams').get())
+                .docs
+                .first;
+        expect(suggestion.data()['upvotes'], 1);
+      },
+    );
   });
 }
 
@@ -368,7 +542,10 @@ void main() {
 class ErroringFakeFirebaseFirestore extends FakeFirebaseFirestore {
   @override
   CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
-    throw FirebaseException(plugin: 'fake_firestore', message: 'An error occurred');
+    throw FirebaseException(
+      plugin: 'fake_firestore',
+      message: 'An error occurred',
+    );
   }
 }
 
@@ -380,7 +557,9 @@ class Mock {
   }
 }
 
-class MockFirebasePlatform extends Mock with MockPlatformInterfaceMixin implements FirebasePlatform {
+class MockFirebasePlatform extends Mock
+    with MockPlatformInterfaceMixin
+    implements FirebasePlatform {
   @override
   Future<FirebaseAppPlatform> initializeApp({
     String? name,
@@ -393,27 +572,28 @@ class MockFirebasePlatform extends Mock with MockPlatformInterfaceMixin implemen
   FirebaseAppPlatform app([String name = defaultFirebaseAppName]) {
     return MockFirebaseApp();
   }
-  
+
   @override
   List<FirebaseAppPlatform> get apps => [MockFirebaseApp()];
 
-  @override
   Future<void> checkName(String name) {
     return Future.value();
   }
 }
 
-class MockFirebaseApp extends Mock with MockPlatformInterfaceMixin implements FirebaseAppPlatform {
+class MockFirebaseApp extends Mock
+    with MockPlatformInterfaceMixin
+    implements FirebaseAppPlatform {
   @override
   String get name => 'mockapp';
 
   @override
   FirebaseOptions get options => const FirebaseOptions(
-        apiKey: 'mock',
-        appId: 'mock',
-        messagingSenderId: 'mock',
-        projectId: 'mock',
-      );
+    apiKey: 'mock',
+    appId: 'mock',
+    messagingSenderId: 'mock',
+    projectId: 'mock',
+  );
 
   @override
   Future<void> delete() async {}

@@ -38,13 +38,13 @@ class _PlayersPageState extends State<PlayersPage> {
   void _showAddPlayerDialog() {
     final nameController = TextEditingController();
     final pageContext = context;
+    bool isLoading = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            bool isLoading = false;
             return AlertDialog(
               title: const Text('Add New Player'),
               content: TextField(

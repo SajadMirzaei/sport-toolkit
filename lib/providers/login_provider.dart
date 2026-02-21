@@ -44,9 +44,7 @@ class LoginProvider with ChangeNotifier {
     debugPrint("LoginProvider - loginWithEmailAndPassword");
     try {
       final user = await _authService.signIn(email: email, password: password);
-      if (user != null) {
-        await _initUser(user);
-      }
+      await _initUser(user);
     } catch (e) {
       debugPrint("LoginProvider - login - Error: $e");
       rethrow;
@@ -58,9 +56,7 @@ class LoginProvider with ChangeNotifier {
     debugPrint("LoginProvider - signup");
     try {
       final user = await _authService.signUp(email: email, password: password);
-      if (user != null) {
-        await _initUser(user);
-      }
+      await _initUser(user);
     } catch (e) {
       debugPrint("LoginProvider - login - Error: $e");
       rethrow;
